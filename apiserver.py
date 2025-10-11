@@ -13,6 +13,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from tts.tts_mapping import mappings as tts_mappings
 from mt.mt_mapping import mappings as mt_mappings
 from asr.asr_mapping import mappings as asr_mappings
+from ocr.ocr_mapping import mappings as ocr_mappings
 
 # Get the access token from environment variables
 ACCESS_TOKEN = os.getenv('TOKEN')
@@ -111,6 +112,131 @@ def tts_endpoint():
                 "message": "Invalid response from TTS API",
                 "data": None,
                 "error": "TTS API returned invalid JSON",
+                "code": 502
+            }), 502
+    
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": "Internal server error",
+            "data": None,
+            "error": str(e),
+            "code": 500
+        }), 500
+
+@app.route('/ocr', methods=['POST'])
+def ocr_endpoint():
+    try:
+        # Check if image file is present
+        if 'file' not in request.files:
+            return jsonify({
+                "status": "error",
+                "message": "No image file provided",
+                "data": None,
+                "error": "file is required in form data",
+                "code": 400
+            }), 400
+        
+        image_file = request.files['file']
+        
+        # Check if file is selected
+        if image_file.filename == '':
+            return jsonify({
+                "status": "error",
+                "message": "No file selected",
+                "data": None,
+                "error": "Please select an image file",
+                "code": 400
+            }), 400
+        
+        # Validate file format (jpg/png/jpeg)
+        allowed_extensions = {'jpg', 'jpeg', 'png'}
+        file_extension = image_file.filename.rsplit('.', 1)[1].lower() if '.' in image_file.filename else ''
+        if file_extension not in allowed_extensions:
+            return jsonify({
+                "status": "error",
+                "message": "Invalid file format",
+                "data": None,
+                "error": f"File must be in jpg/png/jpeg format. Received: {file_extension}",
+                "code": 400
+            }), 400
+        
+        # Get language from form data or JSON
+        language = request.form.get('Language')
+        if not language:
+            # Try to get from JSON if not in form data
+            try:
+                json_data = request.get_json()
+                if json_data:
+                    language = json_data.get('Language')
+            except:
+                pass
+        
+        if not language:
+            return jsonify({
+                "status": "error",
+                "message": "Missing required field",
+                "data": None,
+                "error": "Language field is required",
+                "code": 400
+            }), 400
+        
+        # Get the OCR API URL for the specified language
+        if language not in ocr_mappings:
+            return jsonify({
+                "status": "error",
+                "message": "Language not supported",
+                "data": None,
+                "error": f"Language '{language}' is not supported. Available languages: {list(ocr_mappings.keys())}",
+                "code": 400
+            }), 400
+        
+        ocr_api_url = ocr_mappings[language]
+        
+        # Prepare the file for upload
+        try:
+            # Prepare headers with access token (don't include Content-Type for multipart)
+            headers = {
+                'access-token': ACCESS_TOKEN
+            }
+            
+            # Prepare files for the request
+            files = {
+                'file': (image_file.filename, image_file.stream, image_file.content_type)
+            }
+            
+            # Make request with SSL verification disabled to handle certificate issues
+            response = requests.post(ocr_api_url, files=files, headers=headers, timeout=60, verify=False)
+            response.raise_for_status()
+            
+            # Return the response from the OCR API
+            ocr_response = response.json()
+            return jsonify(ocr_response), response.status_code
+            
+        except requests.exceptions.Timeout:
+            return jsonify({
+                "status": "error",
+                "message": "OCR API request timed out",
+                "data": None,
+                "error": "The OCR service is taking too long to respond",
+                "code": 504
+            }), 504
+            
+        except requests.exceptions.RequestException as e:
+            return jsonify({
+                "status": "error",
+                "message": "Failed to connect to OCR API",
+                "data": None,
+                "error": str(e),
+                "code": 502
+            }), 502
+            
+        except ValueError as e:
+            return jsonify({
+                "status": "error",
+                "message": "Invalid response from OCR API",
+                "data": None,
+                "error": "OCR API returned invalid JSON",
                 "code": 502
             }), 502
     
@@ -345,7 +471,8 @@ def health_check():
         "data": {
             "available_tts_languages": list(tts_mappings.keys()),
             "available_mt_pairs": list(mt_mappings.keys()),
-            "available_asr_languages": list(asr_mappings.keys())
+            "available_asr_languages": list(asr_mappings.keys()),
+            "available_ocr_languages": list(ocr_mappings.keys())
         },
         "error": None,
         "code": 200
