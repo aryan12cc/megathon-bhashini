@@ -12,6 +12,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from tts.tts_mapping import mappings as tts_mappings
 from mt.mt_mapping import mappings as mt_mappings
+from asr.asr_mapping import mappings as asr_mappings
 
 # Get the access token from environment variables
 ACCESS_TOKEN = os.getenv('TOKEN')
@@ -110,6 +111,119 @@ def tts_endpoint():
                 "message": "Invalid response from TTS API",
                 "data": None,
                 "error": "TTS API returned invalid JSON",
+                "code": 502
+            }), 502
+    
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": "Internal server error",
+            "data": None,
+            "error": str(e),
+            "code": 500
+        }), 500
+
+@app.route('/asr', methods=['POST'])
+def asr_endpoint():
+    try:
+        # Check if audio file is present
+        if 'audio_file' not in request.files:
+            return jsonify({
+                "status": "error",
+                "message": "No audio file provided",
+                "data": None,
+                "error": "audio_file is required in form data",
+                "code": 400
+            }), 400
+        
+        audio_file = request.files['audio_file']
+        
+        # Check if file is selected
+        if audio_file.filename == '':
+            return jsonify({
+                "status": "error",
+                "message": "No file selected",
+                "data": None,
+                "error": "Please select an audio file",
+                "code": 400
+            }), 400
+        
+        # Get language from form data or JSON
+        language = request.form.get('Language')
+        if not language:
+            # Try to get from JSON if not in form data
+            try:
+                json_data = request.get_json()
+                if json_data:
+                    language = json_data.get('Language')
+            except:
+                pass
+        
+        if not language:
+            return jsonify({
+                "status": "error",
+                "message": "Missing required field",
+                "data": None,
+                "error": "Language field is required",
+                "code": 400
+            }), 400
+        
+        # Get the ASR API URL for the specified language
+        if language not in asr_mappings:
+            return jsonify({
+                "status": "error",
+                "message": "Language not supported",
+                "data": None,
+                "error": f"Language '{language}' is not supported. Available languages: {list(asr_mappings.keys())}",
+                "code": 400
+            }), 400
+        
+        asr_api_url = asr_mappings[language]
+        
+        # Prepare the file for upload
+        try:
+            # Prepare headers with access token (don't include Content-Type for multipart)
+            headers = {
+                'access-token': ACCESS_TOKEN
+            }
+            
+            # Prepare files for the request
+            files = {
+                'audio_file': (audio_file.filename, audio_file.stream, audio_file.content_type)
+            }
+            
+            # Make request with SSL verification disabled to handle certificate issues
+            response = requests.post(asr_api_url, files=files, headers=headers, timeout=60, verify=False)
+            response.raise_for_status()
+            
+            # Return the response from the ASR API
+            asr_response = response.json()
+            return jsonify(asr_response), response.status_code
+            
+        except requests.exceptions.Timeout:
+            return jsonify({
+                "status": "error",
+                "message": "ASR API request timed out",
+                "data": None,
+                "error": "The ASR service is taking too long to respond",
+                "code": 504
+            }), 504
+            
+        except requests.exceptions.RequestException as e:
+            return jsonify({
+                "status": "error",
+                "message": "Failed to connect to ASR API",
+                "data": None,
+                "error": str(e),
+                "code": 502
+            }), 502
+            
+        except ValueError as e:
+            return jsonify({
+                "status": "error",
+                "message": "Invalid response from ASR API",
+                "data": None,
+                "error": "ASR API returned invalid JSON",
                 "code": 502
             }), 502
     
@@ -230,7 +344,8 @@ def health_check():
         "message": "API server is running",
         "data": {
             "available_tts_languages": list(tts_mappings.keys()),
-            "available_mt_pairs": list(mt_mappings.keys())
+            "available_mt_pairs": list(mt_mappings.keys()),
+            "available_asr_languages": list(asr_mappings.keys())
         },
         "error": None,
         "code": 200
