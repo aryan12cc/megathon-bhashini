@@ -1,318 +1,291 @@
-# 🏥 Vaidya-Vaani MVP - Backend API
+# 🏥 Megathon Bhashini - Database Documentation
 
-Multilingual Healthcare Communication Platform - Minimum Viable Product
+## 📋 Database Architecture
 
-## 🚀 Quick Start
+This project uses MongoDB for storing conversation history with a simple Python FastAPI server.
 
-### Prerequisites
-- Docker & Docker Compose
-- Git
-
-### 1. Clone and Navigate
-```bash
-cd mvp
-```
-
-### 2. Start All Services
-```bash
-docker-compose up -d
-```
-
-This will start:
-- **PostgreSQL** (port 5432) - User authentication
-- **MongoDB** (port 27017) - Documents and conversations
-- **FastAPI Backend** (port 8000) - REST API
-
-### 3. Check Health
-```bash
-curl http://localhost:8000/health
-```
-
-### 4. API Documentation
-Open your browser:
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
-
----
-
-## 📁 Project Structure
-
-```
-mvp/
-├── docker-compose.yml          # Docker orchestration
-├── init.sql                    # PostgreSQL schema
-├── mongo-init.js              # MongoDB collections & sample data
-├── backend/
-│   ├── Dockerfile
-│   ├── requirements.txt
-│   ├── main.py               # FastAPI application
-│   ├── config.py             # Configuration
-│   ├── database.py           # Database connections
-│   ├── models.py             # Pydantic models
-│   └── auth.py               # Authentication
-└── README.md
-```
-
----
-
-## 🗄️ Database Schema
-
-### PostgreSQL
-- **users** - Authentication and basic user info
-
-### MongoDB Collections
-- **conversations** - Clinical consultations, triage, pharmacy chats
-- **documents** - Prescriptions, lab reports, discharge summaries
-- **health_summaries** - AI-generated longitudinal health summaries
-
----
-
-## 🔐 Authentication
-
-### Test Users (Password: `password123`)
-```
-Patient:    9876543210
-Doctor:     9876543211
-Staff:      9876543212
-Pharmacist: 9876543213
-```
-
-### Login Flow
-```bash
-# 1. Login
-curl -X POST http://localhost:8000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "phone_number": "9876543211",
-    "password": "password123"
-  }'
-
-# 2. Use the access_token in subsequent requests
-curl http://localhost:8000/api/auth/me \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
-```
-
----
-
-## 📡 API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login and get JWT token
-- `GET /api/auth/me` - Get current user info
-
-### Users (Authenticated)
-- `GET /api/users` - Get all users (doctors/staff only)
-- `GET /api/users/{user_id}` - Get user by ID
-
-### Conversations
-- `POST /api/conversations` - Create conversation
-- `GET /api/conversations` - Get all conversations (with filters)
-- `GET /api/conversations/{id}` - Get conversation by ID
-- `PUT /api/conversations/{id}` - Update conversation
-- `DELETE /api/conversations/{id}` - Delete conversation
-
-### Documents
-- `POST /api/documents` - Create document
-- `GET /api/documents` - Get all documents (with filters)
-- `GET /api/documents/{id}` - Get document by ID
-- `PUT /api/documents/{id}` - Update document (OCR, AI analysis)
-- `DELETE /api/documents/{id}` - Delete document
-
-### Health Summaries
-- `POST /api/health-summaries` - Create health summary (doctors only)
-- `GET /api/health-summaries` - Get health summaries
-- `GET /api/health-summaries/{id}` - Get summary by ID
-- `DELETE /api/health-summaries/{id}` - Delete summary
-
----
-
-## 🧪 Testing the API
-
-### 1. Register a New Patient
-```bash
-curl -X POST http://localhost:8000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "phone_number": "9999999999",
-    "password": "mypassword",
-    "user_type": "patient",
-    "name": "Test Patient",
-    "preferred_language": "hi"
-  }'
-```
-
-### 2. Create a Conversation
-```bash
-curl -X POST http://localhost:8000/api/conversations \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "conversationType": "clinical_consultation",
-    "patientId": "patient-uuid",
-    "patientName": "Test Patient",
-    "providerId": "doctor-uuid",
-    "providerName": "Dr. Singh",
-    "patientLanguage": "hi",
-    "providerLanguage": "en"
-  }'
-```
-
-### 3. Create a Document
-```bash
-curl -X POST http://localhost:8000/api/documents \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "documentType": "prescription",
-    "patientId": "patient-uuid",
-    "patientName": "Test Patient",
-    "fileUrl": "s3://bucket/prescription.pdf",
-    "fileFormat": "pdf",
-    "uploadedBy": "patient-uuid"
-  }'
-```
-
----
-
-## 🛠️ Development
-
-### View Logs
-```bash
-# All services
-docker-compose logs -f
-
-# Specific service
-docker-compose logs -f backend
-docker-compose logs -f postgres
-docker-compose logs -f mongodb
-```
-
-### Access Database Directly
-
-#### PostgreSQL
-```bash
-docker exec -it vaidyavaani_postgres psql -U vaidya_admin -d vaidyavaani
-```
-
-#### MongoDB
-```bash
-docker exec -it vaidyavaani_mongodb mongosh -u vaidya_admin -p vaidya_secure_pass_123
-use vaidyavaani
-db.conversations.find().pretty()
-```
-
-### Restart Services
-```bash
-docker-compose restart backend
-```
-
-### Stop All Services
-```bash
-docker-compose down
-```
-
-### Clean Everything (including volumes)
-```bash
-docker-compose down -v
-```
-
----
-
-## 🔧 Configuration
-
-### Environment Variables
-Copy `.env.example` to `.env` and modify as needed:
-```bash
-cp backend/.env.example backend/.env
-```
-
-### Change Database Passwords
-Edit `docker-compose.yml`:
-- POSTGRES_PASSWORD
-- MONGO_INITDB_ROOT_PASSWORD
-
----
-
-## 📝 Next Steps (Future Enhancements)
-
-- [ ] File upload for documents (S3 integration)
-- [ ] OCR integration (Bhashini API)
-- [ ] Translation service (Bhashini MT)
-- [ ] AI summarization (Gemini/Sarvam API)
-- [ ] Real-time transcript streaming (WebSockets)
-- [ ] Medicine reminder system
-- [ ] Educational content module
-- [ ] Notification system
-- [ ] User progress tracking
-- [ ] Analytics and reporting
-
----
-
-## 📚 API Response Examples
-
-### Login Response
+### MongoDB - Conversation History
 ```json
 {
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "token_type": "bearer",
-  "user": {
-    "user_id": "123e4567-e89b-12d3-a456-426614174000",
-    "phone_number": "9876543211",
-    "user_type": "doctor",
-    "name": "Dr. Priya Singh",
-    "preferred_language": "en",
-    "is_active": true,
-    "created_at": "2025-10-11T10:00:00"
-  }
-}
-```
-
-### Conversation Response
-```json
-{
-  "id": "507f1f77bcf86cd799439011",
-  "conversationType": "clinical_consultation",
-  "patientId": "patient-uuid-1",
-  "patientName": "Ramesh Rao",
-  "providerId": "doctor-uuid-1",
-  "providerName": "Dr. Priya Singh",
-  "patientLanguage": "te",
-  "providerLanguage": "en",
-  "startTime": "2025-10-11T10:00:00Z",
-  "endTime": "2025-10-11T10:30:00Z",
-  "status": "completed",
+  "_id": "507f1f77bcf86cd799439011",
+  "userID": "76712345",
+  "userLanguage": "Telgu",
+  "personLanguage": "English",
   "transcript": [
     {
-      "speaker": "patient",
-      "speakerId": "patient-uuid-1",
+      "order": 0,
+      "speaker": "user",
       "originalText": "నాకు తలనొప్పి ఉంది",
-      "originalLanguage": "te",
+      "originalLanguage": "Telgu",
       "translatedText": "I have a headache",
-      "translatedLanguage": "en",
-      "timestamp": 0,
-      "isKeyPoint": false
+      "translatedLanguage": "English",
+      "translatedText_EN": "I have a headache",
+      "translatedLanguage_EN": "English"
+    },
+    {
+      "order": 1,
+      "speaker": "person",
+      "originalText": "How long have you had this headache?",
+      "originalLanguage": "English",
+      "translatedText": "మీకు ఎంతకాలం నుండి ఈ తలనొప్పి ఉంది?",
+      "translatedLanguage": "Telgu",
+      "translatedText_EN": "How long have you had this headache?",
+      "translatedLanguage_EN": "English"
     }
   ],
-  "aiSummary": "Patient presented with headache...",
+  "aiSummary_EN": "Patient presented with headache...",
   "triageData": null,
   "createdAt": "2025-10-11T10:00:00Z",
   "updatedAt": "2025-10-11T10:35:00Z"
 }
 ```
 
----
+## 🚀 Quick Start with Docker
 
-## 🐛 Troubleshooting
+### Prerequisites
+- Docker installed
+- MongoDB running (local or Docker)
 
-### Port Already in Use
+### Method 1: Run with Docker
 ```bash
-# Check what's using the port
-sudo lsof -i :8000
-sudo lsof -i :5432
-sudo lsof -i :27017
+# Build the Docker image
+docker build -t megathon-server .
 
-# Kill the process or change ports in docker-compose.yml
+# Run with local MongoDB
+docker run -p 8000:8000 -e MONGODB_URL="mongodb://host.docker.internal:27017/megathon_bhashini" megathon-server
+
+# Or run with Docker MongoDB
+docker network create megathon-network
+docker run -d --name mongodb --network megathon-network -p 27017:27017 mongo:7.0
+docker run -p 8000:8000 --network megathon-network -e MONGODB_URL="mongodb://mongodb:27017/megathon_bhashini" megathon-server
+```
+
+### Method 2: Run Locally
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Set MongoDB URL (optional, defaults to localhost)
+export MONGODB_URL="mongodb://localhost:27017/megathon_bhashini"
+
+# Run the server
+python server.py
+```
+
+### Access the API
+- API Server: http://localhost:8000
+- API Documentation: http://localhost:8000/docs
+- Interactive API Explorer: http://localhost:8000/redoc
+
+### Stop Services
+```bash
+# Stop all services
+docker stop mongodb megathon-server
+
+# Remove containers
+docker rm mongodb megathon-server
+
+# Remove network (if created)
+docker network rm megathon-network
+```
+
+## 🗄️ Database Access
+
+### MongoDB (Conversations)
+```bash
+# Connect to MongoDB container
+docker exec -it mongodb mongosh
+
+# Switch to database and query
+use megathon_bhashini
+db.conversations.find().pretty()
+```
+
+## 📡 API Endpoints
+
+### Conversation Management
+
+#### 1. Create New Conversation
+```http
+POST /api/conversations/new
+Content-Type: application/json
+
+{
+    "userID": "76712345",
+    "userLanguage": "Telgu", 
+    "personLanguage": "English"
+}
+```
+
+**Response:**
+```json
+{
+    "convoID": "507f1f77bcf86cd799439011",
+    "message": "Conversation created successfully"
+}
+```
+
+#### 2. Add Message to Conversation
+```http
+POST /api/conversations/add
+Content-Type: application/json
+
+{
+    "convoID": "507f1f77bcf86cd799439011",
+    "speaker": "user",
+    "originalText": "నాకు తలనొప్పి ఉంది",
+    "originalLanguage": "Telgu",
+    "translatedText": "I have a headache", 
+    "translatedLanguage": "English",
+    "translatedText_EN": "I have a headache",
+    "translatedLanguage_EN": "English"
+}
+```
+
+**Response:**
+```json
+{
+    "order": 0,
+    "message": "Message added successfully"
+}
+```
+
+#### 3. Get Entire Conversation
+```http
+GET /api/conversations/{convoID}
+```
+
+**Response:**
+```json
+{
+    "_id": "507f1f77bcf86cd799439011",
+    "userID": "76712345",
+    "userLanguage": "Telgu",
+    "personLanguage": "English", 
+    "transcript": [
+        {
+            "order": 0,
+            "speaker": "user",
+            "originalText": "నాకు తలనొప్పి ఉంది",
+            "originalLanguage": "Telgu",
+            "translatedText": "I have a headache",
+            "translatedLanguage": "English",
+            "translatedText_EN": "I have a headache",
+            "translatedLanguage_EN": "English"
+        }
+    ],
+    "createdAt": "2025-10-11T10:00:00Z",
+    "updatedAt": "2025-10-11T10:35:00Z"
+}
+```
+
+## 🧪 Testing the API
+
+### Using curl
+
+#### 1. Health Check
+```bash
+curl http://localhost:8000/health
+```
+
+#### 2. Create New Conversation
+```bash
+curl -X POST "http://localhost:8000/api/conversations/new" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "userID": "76712345",
+       "userLanguage": "Telgu",
+       "personLanguage": "English"
+     }'
+```
+
+#### 3. Add Message to Conversation
+```bash
+curl -X POST "http://localhost:8000/api/conversations/add" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "convoID": "YOUR_CONVO_ID_HERE",
+       "speaker": "user",
+       "originalText": "నాకు తలనొప్పి ఉంది",
+       "originalLanguage": "Telgu",
+       "translatedText": "I have a headache",
+       "translatedLanguage": "English",
+       "translatedText_EN": "I have a headache",
+       "translatedLanguage_EN": "English"
+     }'
+```
+
+#### 4. Get Conversation
+```bash
+curl "http://localhost:8000/api/conversations/YOUR_CONVO_ID_HERE"
+```
+
+#### 5. Get All Conversations
+```bash
+curl "http://localhost:8000/api/conversations"
+
+# With filters
+curl "http://localhost:8000/api/conversations?userID=76712345&limit=10"
+```
+
+### Using Python requests
+```python
+import requests
+
+# Create conversation
+response = requests.post("http://localhost:8000/api/conversations/new", json={
+    "userID": "76712345",
+    "userLanguage": "Telgu", 
+    "personLanguage": "English"
+})
+convo_data = response.json()
+convo_id = convo_data["convoID"]
+
+# Add message
+requests.post("http://localhost:8000/api/conversations/add", json={
+    "convoID": convo_id,
+    "speaker": "user",
+    "originalText": "నాకు తలనొప్పి ఉంది",
+    "originalLanguage": "Telgu",
+    "translatedText": "I have a headache",
+    "translatedLanguage": "English",
+    "translatedText_EN": "I have a headache",
+    "translatedLanguage_EN": "English"
+})
+
+# Get conversation
+conversation = requests.get(f"http://localhost:8000/api/conversations/{convo_id}")
+print(conversation.json())
+```
+
+## 📁 Project Structure
+
+```
+database/
+├── Dockerfile                  # Docker image for API server
+├── requirements.txt           # Python dependencies
+├── server.py                  # FastAPI application
+└── README.md                  # This documentation
+```
+
+## 🔧 Development & Troubleshooting
+
+### View Logs
+```bash
+# Server logs
+docker logs megathon-server -f
+
+# MongoDB logs
+docker logs mongodb -f
+```
+
+### Restart Services
+```bash
+# Restart API server only
+docker restart megathon-server
+
+# Restart MongoDB
+docker restart mongodb
 ```
 
 ### Database Connection Issues
@@ -320,31 +293,61 @@ sudo lsof -i :27017
 # Check if containers are running
 docker ps
 
-# Check container health
-docker-compose ps
-
-# View container logs
-docker-compose logs postgres
-docker-compose logs mongodb
+# Test MongoDB connection
+docker exec -it mongodb mongosh --eval "db.adminCommand('ping')"
 ```
 
 ### Reset Everything
 ```bash
-# Stop and remove everything
-docker-compose down -v
+# Stop and remove all containers
+docker stop mongodb megathon-server
+docker rm mongodb megathon-server
+
+# Remove network (if created)
+docker network rm megathon-network
 
 # Start fresh
-docker-compose up -d
+docker network create megathon-network
+docker run -d --name mongodb --network megathon-network -p 27017:27017 mongo:7.0
+docker run -p 8000:8000 --network megathon-network -e MONGODB_URL="mongodb://mongodb:27017/megathon_bhashini" megathon-server
 ```
 
+## 🚀 Production Deployment
+
+### Environment Variables
+For production, set these environment variables:
+
+```bash
+# Use strong passwords  
+MONGODB_URL=mongodb://secure_user:secure_password@mongodb:27017/megathon_bhashini?authSource=admin
+
+# Production settings
+ENVIRONMENT=production
+HOST=0.0.0.0
+PORT=8000
+```
+
+### Security Considerations
+- Change default database passwords
+- Use HTTPS in production
+- Implement authentication/authorization
+- Add request rate limiting
+- Enable database encryption at rest
+- Regular backups
+
 ---
 
-## 📄 License
-MIT
+## 📝 API Summary
 
-## 👥 Contributors
-- Vaidya-Vaani Team
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Health check |
+| `/api/conversations/new` | POST | Create new conversation |
+| `/api/conversations/add` | POST | Add message to conversation |
+| `/api/conversations/{id}` | GET | Get specific conversation |
+| `/api/conversations` | GET | Get all conversations (with filters) |
+| `/api/conversations/{id}` | DELETE | Delete conversation |
 
 ---
 
-**Happy Coding! 🚀**
+*Built for Megathon Bhashini - Multilingual Healthcare Communication*
