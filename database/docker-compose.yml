@@ -1,0 +1,33 @@
+services:
+  # MongoDB for Conversation History
+  mongodb:
+    image: mongo:7
+    container_name: megathon_mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - megathon_network
+
+  # Python API Server
+  api_server:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: megathon_api
+    environment:
+      - MONGODB_URL=mongodb://mongodb:27017/megathon_bhashini
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongodb
+    networks:
+      - megathon_network
+
+volumes:
+  mongodb_data:
+
+networks:
+  megathon_network:
+    driver: bridge
