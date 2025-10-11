@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Upload, Bell, BookOpen } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,11 @@ interface Medicine {
 }
 
 const Prescription = () => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [prescriptionFile, setPrescriptionFile] = useState<File | null>(null);
+  const [originalFileName, setOriginalFileName] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [medicines, setMedicines] = useState<Medicine[]>([
     {
       name: "Paracetamol",
@@ -38,13 +43,102 @@ const Prescription = () => {
     },
   ]);
 
-  const handleUpload = () => {
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const processFile = (file: File) => {
+    const fileExtension = file.name.split(".").pop()?.toLowerCase();
+    const supportedFormats = ["jpg", "png"];
+
+    if (fileExtension && supportedFormats.includes(fileExtension)) {
+      setOriginalFileName(file.name);
+      const timestamp = new Date().getTime();
+      const newFileName = `${timestamp}.${fileExtension}`;
+      const newFile = new File([file], newFileName, { type: file.type });
+
+      setPrescriptionFile(newFile);
+      setPreviewUrl(URL.createObjectURL(newFile));
+    } else {
+      toast.error("Unsupported file format. Please upload a .jpg or .png file.");
+    }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      processFile(file);
+    }
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const items = event.dataTransfer.items;
+    if (items && items.length > 0) {
+      const item = items[0];
+      if (item.kind === "file" && (item.type === "image/jpg" || item.type === "image/png")) {
+        setIsDragging(true);
+      }
+    }
+  };
+
+  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(false);
+    const file = event.dataTransfer.files?.[0];
+    if (file) {
+      processFile(file);
+    }
+  };
+
+  const handleScanConfirm = () => {
+    if (!prescriptionFile || !originalFileName) return;
     // TODO: Integrate Bhashini OCR API
     // API endpoint: https://bhashini.gov.in/ocr
     // Process: Upload image → Extract text → Parse with AI
     // TODO: Use Gemini/Sarvam API for structured parsing
     // Extract: medicine name, dosage, frequency, duration
-    toast.success("Prescription scanned successfully!");
+    
+    // TODO: Send the 'prescriptionFile' to your backend to save it at
+    // 'megathon-bhashini/lipi-gyan/files/prescription/'
+    // Example using fetch:
+    /*
+    const formData = new FormData();
+    formData.append('file', prescriptionFile);
+    fetch('/api/upload-prescription', {
+      method: 'POST',
+      body: formData,
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('File uploaded successfully:', data);
+      toast.success(`Scanning prescription "${originalFileName}"...`);
+    })
+    .catch(error => {
+      console.error('Error uploading file:', error);
+      toast.error('Failed to upload prescription.');
+    });
+    */
+    toast.success(`Scanning prescription "${originalFileName}"...`);
+
+    handleCancel();
+  };
+
+  const handleCancel = () => {
+    setPrescriptionFile(null);
+    setPreviewUrl(null);
+    setOriginalFileName(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const setReminder = (medicineName: string) => {
@@ -56,6 +150,14 @@ const Prescription = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+        accept=".jpg,.png"
+      />
+
       <section className="container py-8">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
@@ -67,22 +169,44 @@ const Prescription = () => {
 
           {/* Upload Card */}
           <Card className="mb-6">
-            <CardContent className="py-8">
-              <div className="flex flex-col items-center justify-center gap-4">
-                <div className="rounded-full bg-primary/10 p-4">
-                  <Upload className="h-8 w-8 text-primary" />
+            <CardContent
+              className={`py-8 ${isDragging ? "border-2 border-dashed border-primary" : ""}`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              {!previewUrl ? (
+                <div className="flex flex-col items-center justify-center gap-4">
+                  <div className="rounded-full bg-primary/10 p-4">
+                    <Upload className="h-8 w-8 text-primary" />
+                  </div>
+                  <div className="text-center">
+                    <h3 className="font-semibold mb-1">Upload Prescription</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Drag & drop or click to upload your prescription (.jpg, .png)
+                    </p>
+                    <Button onClick={handleUploadClick}>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Choose File
+                    </Button>
+                  </div>
                 </div>
+              ) : (
                 <div className="text-center">
-                  <h3 className="font-semibold mb-1">Upload Prescription</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Take a photo or upload an image of your prescription
-                  </p>
-                  <Button onClick={handleUpload}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Scan Prescription
-                  </Button>
+                  <h3 className="font-semibold mb-4">Image Preview</h3>
+                  <img
+                    src={previewUrl}
+                    alt="Prescription preview"
+                    className="max-w-full max-h-64 mx-auto rounded-lg mb-4"
+                  />
+                  <div className="flex justify-center gap-4">
+                    <Button onClick={handleScanConfirm}>Confirm and Scan</Button>
+                    <Button variant="outline" onClick={handleCancel}>
+                      Cancel
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 

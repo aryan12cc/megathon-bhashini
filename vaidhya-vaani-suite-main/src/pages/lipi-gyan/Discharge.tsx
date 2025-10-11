@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Upload, FileText, Pill, Calendar, AlertCircle } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
@@ -7,19 +7,99 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
 const Discharge = () => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [summaryFile, setSummaryFile] = useState<File | null>(null);
+  const [originalFileName, setOriginalFileName] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("diagnosis");
 
-  const handleUpload = () => {
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const processFile = (file: File) => {
+    const fileExtension = file.name.split(".").pop()?.toLowerCase();
+    const supportedFormats = ["jpg", "png"];
+
+    if (fileExtension && supportedFormats.includes(fileExtension)) {
+      setOriginalFileName(file.name);
+      const timestamp = new Date().getTime();
+      const newFileName = `${timestamp}.${fileExtension}`;
+      const newFile = new File([file], newFileName, { type: file.type });
+
+      setSummaryFile(newFile);
+      setPreviewUrl(URL.createObjectURL(newFile));
+    } else {
+      toast.error("Unsupported file format. Please upload a .jpg or .png file.");
+    }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      processFile(file);
+    }
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const items = event.dataTransfer.items;
+    if (items && items.length > 0) {
+      const item = items[0];
+      if (item.kind === "file" && (item.type === "image/jpg" || item.type === "image/png")) {
+        setIsDragging(true);
+      }
+    }
+  };
+
+  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(false);
+    const file = event.dataTransfer.files?.[0];
+    if (file) {
+      processFile(file);
+    }
+  };
+
+  const handleScanConfirm = () => {
+    if (!summaryFile || !originalFileName) return;
     // TODO: Integrate Bhashini OCR+MT for multi-page document processing
     // TODO: Use Gemini API to automatically chunk content into logical sections
     // Sections: Diagnosis, Treatment History, Medications, Follow-up Instructions
-    toast.success("Discharge summary processed successfully!");
+    toast.success(`Scanning summary "${originalFileName}"...`);
+    handleCancel();
+  };
+
+  const handleCancel = () => {
+    setSummaryFile(null);
+    setPreviewUrl(null);
+    setOriginalFileName(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+        accept=".jpg,.png"
+      />
+
       <section className="container py-8">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
@@ -31,22 +111,46 @@ const Discharge = () => {
 
           {/* Upload Card */}
           <Card className="mb-6">
-            <CardContent className="py-8">
-              <div className="flex flex-col items-center justify-center gap-4">
-                <div className="rounded-full bg-accent/10 p-4">
-                  <Upload className="h-8 w-8 text-accent" />
+            <CardContent
+              className={`py-8 ${isDragging ? "border-2 border-dashed border-primary" : ""}`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              {!previewUrl ? (
+                <div className="flex flex-col items-center justify-center gap-4">
+                  <div className="rounded-full bg-accent/10 p-4">
+                    <Upload className="h-8 w-8 text-accent" />
+                  </div>
+                  <div className="text-center">
+                    <h3 className="font-semibold mb-1">Upload Discharge Summary</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Drag & drop or click to upload your summary (.jpg, .png)
+                    </p>
+                    <Button onClick={handleUploadClick} className="bg-accent hover:bg-accent/90">
+                      <Upload className="mr-2 h-4 w-4" />
+                      Choose File
+                    </Button>
+                  </div>
                 </div>
+              ) : (
                 <div className="text-center">
-                  <h3 className="font-semibold mb-1">Upload Discharge Summary</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Upload multi-page discharge summary for intelligent parsing
-                  </p>
-                  <Button onClick={handleUpload} className="bg-accent hover:bg-accent/90">
-                    <Upload className="mr-2 h-4 w-4" />
-                    Scan Summary
-                  </Button>
+                  <h3 className="font-semibold mb-4">Image Preview</h3>
+                  <img
+                    src={previewUrl}
+                    alt="Discharge summary preview"
+                    className="max-w-full max-h-64 mx-auto rounded-lg mb-4"
+                  />
+                  <div className="flex justify-center gap-4">
+                    <Button onClick={handleScanConfirm} className="bg-accent hover:bg-accent/90">
+                      Confirm and Scan
+                    </Button>
+                    <Button variant="outline" onClick={handleCancel}>
+                      Cancel
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
