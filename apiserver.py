@@ -124,6 +124,216 @@ def tts_endpoint():
             "code": 500
         }), 500
 
+@app.route('/s2s', methods=['POST'])
+def s2s_endpoint():
+    try:
+        # Check if audio file is present
+        if 'audio_file' not in request.files:
+            return jsonify({
+                "status": "error",
+                "message": "No audio file provided",
+                "data": None,
+                "error": "audio_file is required in form data",
+                "code": 400
+            }), 400
+        
+        audio_file = request.files['audio_file']
+        
+        # Check if file is selected
+        if audio_file.filename == '':
+            return jsonify({
+                "status": "error",
+                "message": "No file selected",
+                "data": None,
+                "error": "Please select an audio file",
+                "code": 400
+            }), 400
+        
+        # Get source and dest languages from form data
+        source = request.form.get('source')
+        dest = request.form.get('dest')
+        
+        if not source or not dest:
+            return jsonify({
+                "status": "error",
+                "message": "Missing required fields",
+                "data": None,
+                "error": "Both 'source' and 'dest' fields are required",
+                "code": 400
+            }), 400
+        
+        # Step 1: ASR - Convert audio to text using source language
+        if source not in asr_mappings:
+            return jsonify({
+                "status": "error",
+                "message": "Source language not supported for ASR",
+                "data": None,
+                "error": f"ASR for language '{source}' is not supported. Available languages: {list(asr_mappings.keys())}",
+                "code": 400
+            }), 400
+        
+        asr_api_url = asr_mappings[source]
+        
+        try:
+            # Prepare headers with access token
+            headers = {
+                'access-token': ACCESS_TOKEN
+            }
+            
+            # Reset file pointer to beginning
+            audio_file.seek(0)
+            
+            # Prepare files for ASR request
+            files = {
+                'audio_file': (audio_file.filename, audio_file.stream, audio_file.content_type)
+            }
+            
+            # Make ASR request
+            asr_response = requests.post(asr_api_url, files=files, headers=headers, timeout=60, verify=False)
+            asr_response.raise_for_status()
+            
+            asr_result = asr_response.json()
+            
+            # Extract text from ASR response (based on API specifications)
+            if 'data' in asr_result and 'recognized_text' in asr_result['data']:
+                source_text = asr_result['data']['recognized_text']
+            elif 'recognized_text' in asr_result:
+                source_text = asr_result['recognized_text']
+            else:
+                return jsonify({
+                    "status": "error",
+                    "message": "Failed to extract text from ASR response",
+                    "data": None,
+                    "error": f"ASR response format not recognized. Response: {asr_result}",
+                    "code": 502
+                }), 502
+            
+        except requests.exceptions.RequestException as e:
+            return jsonify({
+                "status": "error",
+                "message": "ASR step failed",
+                "data": None,
+                "error": str(e),
+                "code": 502
+            }), 502
+        
+        # Step 2: MT - Translate text from source to dest language
+        mapping_key = f"{source},{dest}"
+        
+        if mapping_key not in mt_mappings:
+            return jsonify({
+                "status": "error",
+                "message": "Translation pair not supported",
+                "data": None,
+                "error": f"Translation from '{source}' to '{dest}' is not supported. Available pairs: {list(mt_mappings.keys())}",
+                "code": 400
+            }), 400
+        
+        mt_api_url = mt_mappings[mapping_key]
+        
+        try:
+            # Prepare payload for MT API
+            mt_payload = {
+                "input_text": source_text
+            }
+            
+            headers = {
+                'access-token': ACCESS_TOKEN,
+                'Content-Type': 'application/json'
+            }
+            
+            # Make MT request
+            mt_response = requests.post(mt_api_url, json=mt_payload, headers=headers, timeout=30, verify=False)
+            mt_response.raise_for_status()
+            
+            mt_result = mt_response.json()
+            
+            # Extract translated text from MT response (based on API specifications)
+            if 'data' in mt_result and 'output_text' in mt_result['data']:
+                translated_text = mt_result['data']['output_text']
+            elif 'output_text' in mt_result:
+                translated_text = mt_result['output_text']
+            else:
+                return jsonify({
+                    "status": "error",
+                    "message": "Failed to extract text from MT response",
+                    "data": None,
+                    "error": f"MT response format not recognized. Response: {mt_result}",
+                    "code": 502
+                }), 502
+            
+        except requests.exceptions.RequestException as e:
+            return jsonify({
+                "status": "error",
+                "message": "MT step failed",
+                "data": None,
+                "error": str(e),
+                "code": 502
+            }), 502
+        
+        # Step 3: TTS - Convert translated text to speech using dest language
+        if dest not in tts_mappings:
+            return jsonify({
+                "status": "error",
+                "message": "Destination language not supported for TTS",
+                "data": None,
+                "error": f"TTS for language '{dest}' is not supported. Available languages: {list(tts_mappings.keys())}",
+                "code": 400
+            }), 400
+        
+        tts_api_url = tts_mappings[dest]
+        
+        try:
+            # Prepare payload for TTS API
+            tts_payload = {
+                "text": translated_text,
+                "gender": "female"  # Default gender
+            }
+            
+            headers = {
+                'access-token': ACCESS_TOKEN,
+                'Content-Type': 'application/json'
+            }
+            
+            # Make TTS request
+            tts_response = requests.post(tts_api_url, json=tts_payload, headers=headers, timeout=30, verify=False)
+            tts_response.raise_for_status()
+            
+            tts_result = tts_response.json()
+            
+            # Return the complete S2S result
+            return jsonify({
+                "status": "success",
+                "message": "Speech-to-Speech conversion completed successfully",
+                "data": {
+                    "source_language": source,
+                    "dest_language": dest,
+                    "original_text": source_text,
+                    "translated_text": translated_text,
+                    "tts_result": tts_result.get('data', tts_result)
+                },
+                "error": None,
+                "code": 200
+            }), 200
+            
+        except requests.exceptions.RequestException as e:
+            return jsonify({
+                "status": "error",
+                "message": "TTS step failed",
+                "data": None,
+                "error": str(e),
+                "code": 502
+            }), 502
+    
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": "Internal server error",
+            "data": None,
+            "error": str(e),
+            "code": 500
+        }), 500
+
 @app.route('/ocr', methods=['POST'])
 def ocr_endpoint():
     try:
