@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: vaidyavaani_postgres
+    environment:
+      POSTGRES_DB: vaidyavaani
+      POSTGRES_USER: vaidya_admin
+      POSTGRES_PASSWORD: vaidya_secure_pass_123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vaidya_admin -d vaidyavaani"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vaidyavaani_network
+
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: vaidyavaani_mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: vaidya_admin
+      MONGO_INITDB_ROOT_PASSWORD: vaidya_secure_pass_123
+      MONGO_INITDB_DATABASE: vaidyavaani
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vaidyavaani_network
+
+  # FastAPI Backend Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vaidyavaani_backend
+    environment:
+      # Database URLs
+      POSTGRES_URL: postgresql://vaidya_admin:vaidya_secure_pass_123@postgres:5432/vaidyavaani
+      MONGODB_URL: mongodb://vaidya_admin:vaidya_secure_pass_123@mongodb:27017/vaidyavaani?authSource=admin
+      
+      # JWT Configuration
+      JWT_SECRET_KEY: vaidya_jwt_secret_key_change_in_production_123456
+      JWT_ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      
+      # API Configuration
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      ENVIRONMENT: development
+      
+      # CORS Origins (comma-separated)
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:8080
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - backend_uploads:/app/uploads
+    networks:
+      - vaidyavaani_network
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  postgres_data:
+    driver: local
+  mongodb_data:
+    driver: local
+  backend_uploads:
+    driver: local
+
+networks:
+  vaidyavaani_network:
+    driver: bridge
