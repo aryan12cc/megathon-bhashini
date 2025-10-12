@@ -152,3 +152,17 @@ Use `git ls-files | tree --fromfile` to get the tree structure.
     └── vite.config.ts
 
 ```
+
+Commands to compile:
+
+```
+1. Create venv (python3 -m venv .venv)
+2. source .venv/bin/activate
+3. pip3 install -r requirements.txt
+4. cd vaidhya-vaani-suite-main
+5. npm i
+6. npm install jwt-decode
+7. From database/, run docker compose up -d
+8. From root, to run backend, python3 database/server.py
+9. From root, to run frontend, cd vaidhya-vaani-suite-main && npm run dev
+```

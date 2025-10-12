@@ -1,7 +1,7 @@
 __pycache__/
 */__pycache__/
 .venv
-.env
+# .env
 
 # Logs
 logs
@@ -31,4 +31,4 @@ dist-ssr
 **/package-lock.json
 **/yarn.lock
 **/pnpm-lock.yaml
-client_secret**.json
+# client_secret**.json
