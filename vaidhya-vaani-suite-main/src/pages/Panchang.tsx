@@ -3,23 +3,23 @@ import Navbar from "@/components/Navbar";
 import FeatureCard from "@/components/FeatureCard";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-const Siksha = () => {
+const Panchang = () => {
   const { t } = useLanguage();
   
   const features = [
     {
-      title: t('siksha.proactive.title'),
-      description: t('siksha.proactive.description'),
+      title: t('panchang.proactive.title'),
+      description: t('panchang.proactive.description'),
       icon: BookOpen,
-      path: "/siksha/proactive",
-      badge: t('siksha.proactive.badge'),
+      path: "/panchang/proactive",
+      badge: t('panchang.proactive.badge'),
     },
     {
-      title: t('siksha.encyclopedia.title'),
-      description: t('siksha.encyclopedia.description'),
+      title: t('panchang.encyclopedia.title'),
+      description: t('panchang.encyclopedia.description'),
       icon: Video,
-      path: "/siksha/encyclopedia",
-      badge: t('siksha.encyclopedia.badge'),
+      path: "/panchang/encyclopedia",
+      badge: t('panchang.encyclopedia.badge'),
     },
   ];
 
@@ -30,10 +30,10 @@ const Siksha = () => {
       <section className="container py-12">
         <div className="max-w-3xl mb-12">
           <h1 className="text-4xl font-bold mb-4 text-foreground">
-            {t('siksha.title')}
+            {t('panchang.title')}
           </h1>
           <p className="text-xl text-muted-foreground">
-            {t('siksha.subtitle')}
+            {t('panchang.subtitle')}
           </p>
         </div>
 
@@ -47,4 +47,4 @@ const Siksha = () => {
   );
 };
 
-export default Siksha;
+export default Panchang;

@@ -25,7 +25,7 @@ const Navbar = () => {
     { path: "/samvaad", label: t('nav.samvaad') },
     { path: "/lipi-gyan", label: t('nav.lipiGyan') },
     { path: "/saaransh", label: t('nav.saaransh') },
-    { path: "/siksha", label: t('nav.siksha') },
+    { path: "/panchang", label: t('nav.panchang') },
   ];
 
   const languages: { code: Language; name: string }[] = [

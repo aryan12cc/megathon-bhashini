@@ -36,7 +36,7 @@ This is where the most significant fine-graining occurs. Instead of a generic "s
         1. **Bhashini OCR** extracts the text.
         2. **Gemini/Sarvam's** reasoning capabilities are used to parse the unstructured text, identifying: **Medicine Name**, **Dosage** (e.g., 650mg), **Frequency** (parsing "1-0-1" into Morning/Night icons), and **Duration**.
         3. The translated output is shown in a table. Each row is a medicine.
-        4. **Interactive Feature:** Each medicine has a "Set Reminder" button that integrates with the phone's alarm/calendar and a "Learn More" button that links to the Siksha module for an explanatory video.
+        4. **Interactive Feature:** Each medicine has a "Set Reminder" button that integrates with the phone's alarm/calendar and a "Learn More" button that links to the Panchang module for an explanatory video.
 
 * **2b. Application: Lab Report Analyzer**
   * **Purpose:** To demystify complex lab reports.
@@ -75,13 +75,13 @@ This module provides context-specific summaries based on the input source.
   * **UI:** A "Generate Timeline" button in the patient's profile.
   * **Workflow:** The doctor selects multiple documents (past lab reports, discharge summaries). The **Gemini API** processes the content from all these sources and generates a chronological summary of the patient's medical history in English, highlighting significant events, diagnoses, and changes in lab values.
 
-## 4. Patient Education: The "Siksha" (Education) Module 🎓
+## 4. Patient Education: The "Panchang" (Education) Module 🎓
 
 This module becomes proactive and personalized.
 
 * **4a. Application: Proactive Learning Assistant**
   * **Purpose:** To provide relevant information automatically.
-  * **Workflow:** The system is context-aware. If the "Prescription Decoder" identifies an anti-diabetic drug, or if the doctor's diagnosis mentions "Hypertension," the Siksha module sends a notification: "We've added some helpful videos about managing your condition to your Health Library. Would you like to watch them now?" All content is, of course, available in the patient's preferred language (using the video dubbing/subtitling feature).
+  * **Workflow:** The system is context-aware. If the "Prescription Decoder" identifies an anti-diabetic drug, or if the doctor's diagnosis mentions "Hypertension," the Panchang module sends a notification: "We've added some helpful videos about managing your condition to your Health Library. Would you like to watch them now?" All content is, of course, available in the patient's preferred language (using the video dubbing/subtitling feature).
 
 * **4b. Application: Interactive Medicine Encyclopedia**
   * **Purpose:** To provide detailed information about specific medicines.
