@@ -1,4 +1,4 @@
-import { MessageSquare, FileText, Brain, GraduationCap } from "lucide-react";
+import { MessageSquare, FileText, Brain, Calendar } from "lucide-react";
 import ModuleCard from "@/components/ModuleCard";
 import Navbar from "@/components/Navbar";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -31,7 +31,7 @@ const Index = () => {
     {
       title: t('index.panchang.title'),
       description: t('index.panchang.description'),
-      icon: GraduationCap,
+      icon: Calendar,
       path: "/panchang",
       gradient: "bg-gradient-hero",
     },
@@ -44,7 +44,7 @@ const Index = () => {
       {/* Hero Section */}
       <section className="container py-12 md:py-20">
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-hero bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-5xl font-bold mb-6 md:mb-8 leading-tight md:leading-snug bg-gradient-hero bg-clip-text text-transparent">
             {t('index.hero.title')}
           </h1>
           <p className="text-xl text-muted-foreground">
