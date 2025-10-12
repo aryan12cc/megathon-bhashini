@@ -228,4 +228,5 @@ sudo docker compose build
 sudo docker compose down -v
 sudo docker compose up -d
 ```
-```
+
+## Go to: http://localhost:5173 for accessing the website
