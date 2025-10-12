@@ -29,10 +29,10 @@ const Index = () => {
       gradient: "bg-accent",
     },
     {
-      title: t('index.siksha.title'),
-      description: t('index.siksha.description'),
+      title: t('index.panchang.title'),
+      description: t('index.panchang.description'),
       icon: GraduationCap,
-      path: "/siksha",
+      path: "/panchang",
       gradient: "bg-gradient-hero",
     },
   ];

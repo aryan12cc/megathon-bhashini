@@ -11,7 +11,7 @@ import NotFound from "./pages/NotFound";
 import Samvaad from "./pages/Samvaad";
 import LipiGyan from "./pages/LipiGyan";
 import Saaransh from "./pages/Saaransh";
-import Siksha from "./pages/Siksha";
+import Panchang from "./pages/Panchang";
 
 // Samvaad Sub-features
 import Consultation from "./pages/samvaad/Consultation";
@@ -44,7 +44,7 @@ const App = () => (
           <Route path="/samvaad" element={<Samvaad />} />
           <Route path="/lipi-gyan" element={<LipiGyan />} />
           <Route path="/saaransh" element={<Saaransh />} />
-          <Route path="/siksha" element={<Siksha />} />
+          <Route path="/panchang" element={<Panchang />} />
           
           {/* Samvaad Sub-routes */}
           <Route path="/samvaad/consultation" element={<Consultation />} />
