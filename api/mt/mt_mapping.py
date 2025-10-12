@@ -12,7 +12,7 @@ mappings = {
     "Sindhi_Arabic,Gujarati": "https://canvas.iiit.ac.in/sandboxbeprod/check_model_status_and_infer/687217394f34535ffa89bac8",
     "Gujarati,Sindhi_Arabic": "https://canvas.iiit.ac.in/sandboxbeprod/check_model_status_and_infer/687217304f34535ffa89b927",
     "Punjabi,English": "https://canvas.iiit.ac.in/sandboxbeprod/check_model_status_and_infer/688fbcc28a64d68b8ea938c3",
-    "Hindi,English": "https://canvas.iiit.ac.in/sandboxbeprod/check_model_status_and_infer/68ad7aa0747a9002950e94ee",
+    "Hindi,English": "https://canvas.iiit.ac.in/sandboxbeprod/check_model_status_and_infer/67b86729b5cc0eb92316384a",
     "Sindhi_Arabic,Punjabi": "https://canvas.iiit.ac.in/sandboxbeprod/check_model_status_and_infer/687217394f34535ffa89bad5",
     "Urdu,English": "https://canvas.iiit.ac.in/sandboxbeprod/check_model_status_and_infer/688fbcc58a64d68b8ea93947",
     "Hindi,Sindhi_Arabic": "https://canvas.iiit.ac.in/sandboxbeprod/check_model_status_and_infer/687217304f34535ffa89b942",

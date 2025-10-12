@@ -41,6 +41,8 @@ class S2SPipeline:
         self.chunk_duration = chunk_duration * 1000  # Convert to milliseconds
         self.overlap = overlap * 1000  # Convert to milliseconds
         self.chunks: List[AudioChunk] = []
+        self.original_text = ""
+        self.translated_text = ""
         
         # Validate language mappings
         self._validate_languages()
@@ -450,9 +452,13 @@ class S2SPipeline:
                 with open(output_file, 'wb') as out_file:
                     out_file.write(audio_response.content)
                 
+                # Store results in instance variables
+                self.original_text = data.get('original_text', '')
+                self.translated_text = data.get('translated_text', '')
+                
                 print(f"Pipeline completed successfully! Output saved to: {output_file}")
-                print(f"Original text: {data.get('original_text', 'N/A')}")
-                print(f"Translated text: {data.get('translated_text', 'N/A')}")
+                print(f"Original text: {self.original_text}")
+                print(f"Translated text: {self.translated_text}")
                 
                 return True
             else:
@@ -502,6 +508,39 @@ class S2SPipeline:
         print(f"Pipeline completed successfully! Output saved to: {output_file}")
         
         return True
+
+    def run(self, input_audio_path: str) -> dict:
+        """
+        Run the complete S2S pipeline and return results as a dictionary
+        """
+        try:
+            # Create temporary output file
+            temp_output = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
+            temp_output.close()
+            
+            # Process the file using simple method for faster processing
+            success = self.process_file_simple(input_audio_path, temp_output.name)
+            
+            if success:
+                return {
+                    'status': 'success',
+                    'data': {
+                        'original_text': self.original_text,
+                        'translated_text': self.translated_text,
+                        'output_audio': temp_output.name
+                    }
+                }
+            else:
+                return {
+                    'status': 'error',
+                    'message': 'S2S processing failed'
+                }
+                
+        except Exception as e:
+            return {
+                'status': 'error',
+                'message': f'S2S pipeline error: {str(e)}'
+            }
 
 def main():
     parser = argparse.ArgumentParser(description='Speech-to-Speech Translation Pipeline')
