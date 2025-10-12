@@ -20,6 +20,8 @@ from jose import JWTError, jwt
 from starlette.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
 from dotenv import load_dotenv
+from googleapiclient.discovery import build
+from google.oauth2.credentials import Credentials
 
 
 # --- Configuration ---
@@ -114,7 +116,7 @@ oauth.register(
     client_secret=GOOGLE_CLIENT_SECRET,
     server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
     client_kwargs={
-        'scope': 'openid email profile'
+        'scope': 'openid email profile https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/tasks.readonly'
     },
     authorize_params={'access_type': 'offline', 'prompt': 'consent'},
     api_base_url='https://www.googleapis.com/oauth2/v1/',
@@ -213,6 +215,8 @@ async def auth_google_callback(request: Request):
     email = user_info['email']
     user = users_collection.find_one({"email": email})
 
+    expires_at = datetime.utcnow() + timedelta(seconds=token['expires_in'])
+
     if not user:
         # Create a new user
         new_user_data = {
@@ -220,9 +224,24 @@ async def auth_google_callback(request: Request):
             "fullName": user_info.get('name', ''),
             "hashed_password": get_password_hash(os.urandom(16).hex()),  # Generate a random password
             "createdAt": datetime.utcnow(),
-            "updatedAt": datetime.utcnow()
+            "updatedAt": datetime.utcnow(),
+            "google_access_token": token['access_token'],
+            "google_refresh_token": token.get('refresh_token'),
+            "google_token_expires_at": expires_at,
         }
         users_collection.insert_one(new_user_data)
+        user = users_collection.find_one({"email": email})
+    else:
+        # Update token for existing user
+        update_data = {
+            "google_access_token": token['access_token'],
+            "google_token_expires_at": expires_at,
+            "updatedAt": datetime.utcnow()
+        }
+        if 'refresh_token' in token:
+            update_data["google_refresh_token"] = token['refresh_token']
+        
+        users_collection.update_one({"_id": user["_id"]}, {"$set": update_data})
         user = users_collection.find_one({"email": email})
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -281,6 +300,149 @@ async def read_users_me(current_user: dict = Depends(get_current_user)):
     """Get current logged in user"""
     current_user["_id"] = str(current_user["_id"])
     return User(**current_user)
+
+
+class CalendarEvent(BaseModel):
+    summary: str
+    description: Optional[str] = None
+    start: datetime
+    end: datetime
+    attendees: Optional[List[EmailStr]] = None
+
+@app.post("/api/calendar/create-event")
+async def create_calendar_event(event_data: CalendarEvent, current_user: dict = Depends(get_current_user)):
+    """Create a new Google Calendar event"""
+    
+    if not current_user.get("google_access_token"):
+        raise HTTPException(status_code=403, detail="User has not authenticated with Google or token is missing.")
+
+    creds = Credentials(
+        token=current_user["google_access_token"],
+        refresh_token=current_user.get("google_refresh_token"),
+        token_uri='https://oauth2.googleapis.com/token',
+        client_id=GOOGLE_CLIENT_ID,
+        client_secret=GOOGLE_CLIENT_SECRET,
+        scopes=['https://www.googleapis.com/auth/calendar']
+    )
+
+    try:
+        service = build('calendar', 'v3', credentials=creds)
+
+        event = {
+            'summary': event_data.summary,
+            'description': event_data.description,
+            'start': {
+                'dateTime': event_data.start.isoformat(),
+                'timeZone': 'UTC',
+            },
+            'end': {
+                'dateTime': event_data.end.isoformat(),
+                'timeZone': 'UTC',
+            },
+            'attendees': [{'email': email} for email in event_data.attendees] if event_data.attendees else [],
+        }
+
+        created_event = service.events().insert(calendarId='primary', body=event).execute()
+        return {"message": "Event created successfully", "event": created_event}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create calendar event: {str(e)}")
+
+
+@app.delete("/api/calendar/delete-event/{event_id}")
+async def delete_calendar_event(event_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a Google Calendar event"""
+
+    if not current_user.get("google_access_token"):
+        raise HTTPException(status_code=403, detail="User has not authenticated with Google or token is missing.")
+
+    creds = Credentials(
+        token=current_user["google_access_token"],
+        refresh_token=current_user.get("google_refresh_token"),
+        token_uri='https://oauth2.googleapis.com/token',
+        client_id=GOOGLE_CLIENT_ID,
+        client_secret=GOOGLE_CLIENT_SECRET,
+        scopes=['https://www.googleapis.com/auth/calendar']
+    )
+
+    try:
+        service = build('calendar', 'v3', credentials=creds)
+        service.events().delete(calendarId='primary', eventId=event_id).execute()
+        return {"message": "Event deleted successfully"}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete calendar event: {str(e)}")
+
+
+@app.get("/api/calendar/events")
+async def get_calendar_events(current_user: dict = Depends(get_current_user)):
+    """Get events from the user's primary Google Calendar"""
+    if not current_user.get("google_access_token"):
+        raise HTTPException(status_code=403, detail="User has not authenticated with Google or token is missing.")
+
+    creds = Credentials(
+        token=current_user["google_access_token"],
+        refresh_token=current_user.get("google_refresh_token"),
+        token_uri='https://oauth2.googleapis.com/token',
+        client_id=GOOGLE_CLIENT_ID,
+        client_secret=GOOGLE_CLIENT_SECRET,
+        scopes=['https://www.googleapis.com/auth/calendar.readonly']
+    )
+
+    try:
+        service = build('calendar', 'v3', credentials=creds)
+
+        now = datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
+        events_result = service.events().list(
+            calendarId='primary',
+            timeMin=now,
+            maxResults=10,
+            singleEvents=True,
+            orderBy='startTime'
+        ).execute()
+        
+        events = events_result.get('items', [])
+        return {"events": events}
+
+    except Exception as e:
+        # This could be a credentials issue, e.g., token expired.
+        # A real app should handle token refresh.
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve calendar events: {str(e)}")
+
+
+@app.get("/api/tasks")
+async def get_google_tasks(current_user: dict = Depends(get_current_user)):
+    """Get tasks from the user's Google Tasks"""
+    if not current_user.get("google_access_token"):
+        raise HTTPException(status_code=403, detail="User has not authenticated with Google or token is missing.")
+
+    creds = Credentials(
+        token=current_user["google_access_token"],
+        refresh_token=current_user.get("google_refresh_token"),
+        token_uri='https://oauth2.googleapis.com/token',
+        client_id=GOOGLE_CLIENT_ID,
+        client_secret=GOOGLE_CLIENT_SECRET,
+        scopes=['https://www.googleapis.com/auth/tasks.readonly']
+    )
+
+    try:
+        service = build('tasks', 'v1', credentials=creds)
+
+        # First, get all task lists
+        tasklists_result = service.tasklists().list().execute()
+        task_lists = tasklists_result.get('items', [])
+
+        all_tasks = []
+        for task_list in task_lists:
+            # Then, get tasks from each list
+            tasks_result = service.tasks().list(tasklist=task_list['id']).execute()
+            tasks = tasks_result.get('items', [])
+            all_tasks.extend(tasks)
+        
+        return {"tasks": all_tasks}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve Google Tasks: {str(e)}")
 
 
 # --- Conversation Endpoints ---

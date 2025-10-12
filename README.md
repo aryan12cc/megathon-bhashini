@@ -166,3 +166,10 @@ Commands to compile:
 8. From root, to run backend, python3 database/server.py
 9. From root, to run frontend, cd vaidhya-vaani-suite-main && npm run dev
 ```
+
+You will need a Google account to access. Please use the following credentials:
+
+```
+username: test.user.megathon@gmail.com
+password: Y4V7y4r6
+```
