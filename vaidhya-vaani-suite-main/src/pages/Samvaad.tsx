@@ -21,13 +21,6 @@ const Samvaad = () => {
       path: "/samvaad/triage",
       badge: t('samvaad.triage.badge'),
     },
-    {
-      title: t('samvaad.pharmacy.title'),
-      description: t('samvaad.pharmacy.description'),
-      icon: Pill,
-      path: "/samvaad/pharmacy",
-      badge: t('samvaad.pharmacy.badge'),
-    },
   ];
 
   return (

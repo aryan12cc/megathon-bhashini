@@ -46,10 +46,7 @@ const translations: Record<Language, Record<string, string>> = {
     'samvaad.triage.title': 'Smart Reception & Triage',
     'samvaad.triage.description': 'Guided conversational intake for patient registration and symptom screening',
     'samvaad.triage.badge': 'Automated',
-    'samvaad.pharmacy.title': 'Pharmacy Connect',
-    'samvaad.pharmacy.description': 'Clear communication between patients and pharmacists with prescription access',
-    'samvaad.pharmacy.badge': 'Interactive',
-    
+          
     // Lipi-Gyan module
     'lipiGyan.title': 'Lipi-Gyan Module',
     'lipiGyan.subtitle': 'Document intelligence making medical documents accessible and understandable',
@@ -72,9 +69,6 @@ const translations: Record<Language, Record<string, string>> = {
     'saaransh.actionPlan.title': "Patient's Action Plan",
     'saaransh.actionPlan.description': "Simple, bulleted action items extracted from consultation in patient's language",
     'saaransh.actionPlan.badge': 'Simplified',
-    'saaransh.healthSummary.title': 'Longitudinal Health Summary',
-    'saaransh.healthSummary.description': "Chronological overview of patient's medical history from multiple documents",
-    'saaransh.healthSummary.badge': 'Timeline',
     
     // Panchang module
     'panchang.title': 'Panchang Module',
@@ -124,10 +118,7 @@ const translations: Record<Language, Record<string, string>> = {
     'samvaad.triage.title': 'स्मार्ट रिसेप्शन और ट्राइएज',
     'samvaad.triage.description': 'रोगी पंजीकरण और लक्षण स्क्रीनिंग के लिए निर्देशित वार्तालाप इनटेक',
     'samvaad.triage.badge': 'स्वचालित',
-    'samvaad.pharmacy.title': 'फार्मेसी कनेक्ट',
-    'samvaad.pharmacy.description': 'प्रिस्क्रिप्शन एक्सेस के साथ रोगियों और फार्मासिस्ट के बीच स्पष्ट संचार',
-    'samvaad.pharmacy.badge': 'इंटरैक्टिव',
-    
+          
     // Lipi-Gyan module
     'lipiGyan.title': 'लिपि-ज्ञान (लिपि ज्ञान) मॉड्यूल',
     'lipiGyan.subtitle': 'चिकित्सा दस्तावेज़ों को सुलभ और समझने योग्य बनाने वाली दस्तावेज़ बुद्धिमत्ता',
@@ -150,9 +141,6 @@ const translations: Record<Language, Record<string, string>> = {
     'saaransh.actionPlan.title': 'रोगी की कार्य योजना',
     'saaransh.actionPlan.description': 'रोगी की भाषा में परामर्श से निकाले गए सरल, बुलेटेड कार्य आइटम',
     'saaransh.actionPlan.badge': 'सरलीकृत',
-    'saaransh.healthSummary.title': 'अनुदैर्ध्य स्वास्थ्य सारांश',
-    'saaransh.healthSummary.description': 'कई दस्तावेज़ों से रोगी के चिकित्सा इतिहास का कालानुक्रमिक अवलोकन',
-    'saaransh.healthSummary.badge': 'समयरेखा',
     
     // Panchang module
     'panchang.title': 'शिक्षा (शिक्षा) मॉड्यूल',
@@ -202,10 +190,7 @@ const translations: Record<Language, Record<string, string>> = {
     'samvaad.triage.title': 'స్మార్ట్ రిసెప్షన్ & ట్రయాజ్',
     'samvaad.triage.description': 'పేషెంట్ రిజిస్ట్రేషన్ మరియు లక్షణ స్క్రీనింగ్ కోసం మార్గదర్శక సంభాషణ ఇన్‌టేక్',
     'samvaad.triage.badge': 'స్వయంచాలిత',
-    'samvaad.pharmacy.title': 'ఫార్మసీ కనెక్ట్',
-    'samvaad.pharmacy.description': 'ప్రిస్క్రిప్షన్ యాక్సెస్‌తో పేషెంట్లు మరియు ఫార్మసిస్టుల మధ్య స్పష్టమైన కమ్యూనికేషన్',
-    'samvaad.pharmacy.badge': 'ఇంటరాక్టివ్',
-    
+          
     // Lipi-Gyan module
     'lipiGyan.title': 'లిపి-జ్ఞాన్ (లిపి జ్ఞానం) మాడ్యూల్',
     'lipiGyan.subtitle': 'వైద్య పత్రాలను అందుబాటులో మరియు అర్థమయ్యేలా చేసే డాక్యుమెంట్ ఇంటెలిజెన్స్',
@@ -228,9 +213,6 @@ const translations: Record<Language, Record<string, string>> = {
     'saaransh.actionPlan.title': 'పేషెంట్ యాక్షన్ ప్లాన్',
     'saaransh.actionPlan.description': 'పేషెంట్ భాషలో కన్సల్టేషన్ నుండి సేకరించిన సాధారణ, బుల్లెట్ యాక్షన్ ఐటమ్‌లు',
     'saaransh.actionPlan.badge': 'సరళీకృతం',
-    'saaransh.healthSummary.title': 'లాంగిట్యూడినల్ హెల్త్ సమ్మరీ',
-    'saaransh.healthSummary.description': 'అనేక పత్రాల నుండి పేషెంట్ వైద్య చరిత్ర యొక్క కాలక్రమ అవలోకనం',
-    'saaransh.healthSummary.badge': 'టైమ్‌లైన్',
     
     // Panchang module
     'panchang.title': 'శిక్ష (విద్య) మాడ్యూల్',
@@ -280,10 +262,7 @@ const translations: Record<Language, Record<string, string>> = {
     'samvaad.triage.title': 'ஸ்மார்ட் வரவேற்பு & முன்னுரிமை',
     'samvaad.triage.description': 'நோயாளி பதிவு மற்றும் அறிகுறி திரையிடலுக்கான வழிகாட்டப்பட்ட உரையாடல் உட்கொள்ளல்',
     'samvaad.triage.badge': 'தானியங்கி',
-    'samvaad.pharmacy.title': 'மருந்தகம் இணைப்பு',
-    'samvaad.pharmacy.description': 'மருந்து சீட்டு அணுகலுடன் நோயாளிகள் மற்றும் மருந்தாளர்களுக்கிடையே தெளிவான தகவல்தொடர்பு',
-    'samvaad.pharmacy.badge': 'ஊடாடக்கூடிய',
-    
+          
     // Lipi-Gyan module
     'lipiGyan.title': 'லிபி-ஞான் (எழுத்து அறிவு) தொகுதி',
     'lipiGyan.subtitle': 'மருத்துவ ஆவணங்களை அணுகக்கூடியதாகவும் புரிந்துகொள்ளக்கூடியதாகவும் ஆக்கும் ஆவண நுண்ணறிவு',
@@ -306,9 +285,6 @@ const translations: Record<Language, Record<string, string>> = {
     'saaransh.actionPlan.title': 'நோயாளியின் செயல் திட்டம்',
     'saaransh.actionPlan.description': 'நோயாளியின் மொழியில் ஆலோசனையிலிருந்து பிரித்தெடுக்கப்பட்ட எளிய, புள்ளி செயல் உருப்படிகள்',
     'saaransh.actionPlan.badge': 'எளிதாக்கப்பட்ட',
-    'saaransh.healthSummary.title': 'நீள்வழி சுகாதார சுருக்கம்',
-    'saaransh.healthSummary.description': 'பல ஆவணங்களிலிருந்து நோயாளியின் மருத்துவ வரலாற்றின் காலவரிசை மேலோட்டம்',
-    'saaransh.healthSummary.badge': 'காலவரிசை',
     
     // Panchang module
     'panchang.title': 'ஷிக்ஷா (கல்வி) தொகுதி',
@@ -358,10 +334,7 @@ const translations: Record<Language, Record<string, string>> = {
     'samvaad.triage.title': 'স্মার্ট অভ্যর্থনা এবং ট্রাইয়েজ',
     'samvaad.triage.description': 'রোগী নিবন্ধন এবং লক্ষণ স্ক্রীনিংয়ের জন্য নির্দেশিত কথোপকথন গ্রহণ',
     'samvaad.triage.badge': 'স্বয়ংক্রিয়',
-    'samvaad.pharmacy.title': 'ফার্মেসি সংযোগ',
-    'samvaad.pharmacy.description': 'প্রেসক্রিপশন অ্যাক্সেস সহ রোগী এবং ফার্মাসিস্টদের মধ্যে স্পষ্ট যোগাযোগ',
-    'samvaad.pharmacy.badge': 'ইন্টারেক্টিভ',
-    
+          
     // Lipi-Gyan module
     'lipiGyan.title': 'লিপি-জ্ঞান (লিপি জ্ঞান) মডিউল',
     'lipiGyan.subtitle': 'চিকিৎসা নথিগুলিকে অ্যাক্সেসযোগ্য এবং বোধগম্য করে তোলে নথি বুদ্ধিমত্তা',
@@ -384,9 +357,6 @@ const translations: Record<Language, Record<string, string>> = {
     'saaransh.actionPlan.title': 'রোগীর কর্ম পরিকল্পনা',
     'saaransh.actionPlan.description': "রোগীর ভাষায় পরামর্শ থেকে নিষ্কাশিত সহজ, বুলেটেড অ্যাকশন আইটেম",
     'saaransh.actionPlan.badge': 'সরলীকৃত',
-    'saaransh.healthSummary.title': 'দীর্ঘকালীন স্বাস্থ্য সারাংশ',
-    'saaransh.healthSummary.description': 'একাধিক নথি থেকে রোগীর চিকিৎসা ইতিহাসের কালানুক্রমিক ওভারভিউ',
-    'saaransh.healthSummary.badge': 'টাইমলাইন',
     
     // Panchang module
     'panchang.title': 'শিক্ষা (শিক্ষা) মডিউল',
