@@ -337,7 +337,7 @@ const Consultation = () => {
       console.log('Calling ASR API with language:', sourceLanguage);
       console.log('FormData audio file size:', processedAudioBlob.size);
       
-      const asrResponse = await fetch('http://localhost:8002/asr', {
+      const asrResponse = await fetch('http://localhost:8005/asr', {
         method: 'POST',
         body: asrFormData,
       });
@@ -361,7 +361,7 @@ const Consultation = () => {
       }
 
       // Step 2: Translate text using MT
-      const mtResponse = await fetch('http://localhost:8002/mt', {
+      const mtResponse = await fetch('http://localhost:8005/mt', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -393,7 +393,7 @@ const Consultation = () => {
       }
 
       // Step 3: Generate audio using TTS
-      const ttsResponse = await fetch('http://localhost:8002/tts', {
+      const ttsResponse = await fetch('http://localhost:8005/tts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
