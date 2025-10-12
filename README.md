@@ -143,7 +143,7 @@ Use `git ls-files | tree --fromfile` to get the tree structure.
     │   │   │   ├── Pharmacy.tsx
     │   │   │   └── Triage.tsx
     │   │   ├── Samvaad.tsx
-    │   │   └── Siksha.tsx
+    │   │   └── Panchang.tsx
     │   └── vite-env.d.ts
     ├── tailwind.config.ts
     ├── tsconfig.app.json

@@ -76,7 +76,8 @@ const Consultation = () => {
 
   const createNewConversation = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/conversations/new', {
+      const databaseUrl = import.meta.env.VITE_DATABASE_URL || 'http://localhost:8002';
+      const response = await fetch(`${databaseUrl}/api/conversations/new`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -544,7 +545,8 @@ const Consultation = () => {
       }
       
       // Step 4: Add message to conversation
-      await fetch(`http://localhost:8000/api/conversations/add`, {
+      const databaseUrl = import.meta.env.VITE_DATABASE_URL || 'http://localhost:8002';
+      await fetch(`${databaseUrl}/api/conversations/add`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
