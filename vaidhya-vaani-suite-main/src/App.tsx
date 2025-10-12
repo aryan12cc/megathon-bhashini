@@ -16,7 +16,6 @@ import Panchang from "./pages/Panchang";
 // Samvaad Sub-features
 import Consultation from "./pages/samvaad/Consultation";
 import Triage from "./pages/samvaad/Triage";
-import Pharmacy from "./pages/samvaad/Pharmacy";
 
 // Lipi-Gyan Sub-features
 import Prescription from "./pages/lipi-gyan/Prescription";
@@ -49,7 +48,6 @@ const App = () => (
           {/* Samvaad Sub-routes */}
           <Route path="/samvaad/consultation" element={<Consultation />} />
           <Route path="/samvaad/triage" element={<Triage />} />
-          <Route path="/samvaad/pharmacy" element={<Pharmacy />} />
           
           {/* Lipi-Gyan Sub-routes */}
           <Route path="/lipi-gyan/prescription" element={<Prescription />} />
