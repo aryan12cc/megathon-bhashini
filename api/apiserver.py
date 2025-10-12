@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import requests
 import sys
 import os
@@ -22,6 +23,7 @@ if not ACCESS_TOKEN:
     raise ValueError("TOKEN not found in environment variables. Please check your .env file.")
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 @app.route('/tts', methods=['POST'])
 def tts_endpoint():
@@ -60,7 +62,68 @@ def tts_endpoint():
                 "error": f"Language '{language}' is not supported. Available languages: {list(tts_mappings.keys())}",
                 "code": 400
             }), 400
+        # mt_api_url = "https://dhruva-api.bhashini.gov.in/services/inference/pipeline"
+        # mt_payload = {
+
+        #         "pipelineTasks": [
+
+        #         {
+
+        #         "taskType": "tts",
+
+        #         "config": {
+
+        #         "language": {
+
+        #         "sourceLanguage": "en"
+
+        #         },
+
+        #         "serviceId": "ai4bharat/indic-tts-coqui-misc-gpu--t",
+
+        #          "gender": "female"
+
+        #         }
+
+        #         }
+
+        #         ],
+
+        #         "inputData": {
+
+        #         "input": [
+
+        #         {
+
+        #         "source": text
+
+        #         }
+
+        #         ],
+
+        #         "audio": [
+
+        #         {
+
+        #         "audioContent": None
+
+        #         }
+
+        #         ]
+
+        #         }
+
+        #         }
+        # headers = {
+        #         'Authorization': 'DveTyi8IJRxMNJdbUI0EhiE1X0yQYmoIiNLafiNLYbr4K0JCmDxFasFbOQQgkz7w',
+        #         'Content-Type': 'application/json'
+        #     }
+        # response = requests.post(mt_api_url, json=mt_payload, headers=headers, timeout=30, verify=False)
+        # response.raise_for_status()
         
+        # # Return the response from the MT API
+        # mt_response = response.json()
+        # return jsonify(mt_response), response.status_code
         tts_api_url = tts_mappings[language]
         
         # Prepare the payload for the TTS API
@@ -613,7 +676,70 @@ def mt_endpoint():
                 "error": f"Translation from '{source}' to '{dest}' is not supported. Available pairs: {list(mt_mappings.keys())}",
                 "code": 400
             }), 400
+        # mt_api_url = "https://dhruva-api.bhashini.gov.in/services/inference/pipeline"
+        # mt_payload = {
+
+        #         "pipelineTasks": [
+
+        #         {
+
+        #         "taskType": "translation",
+
+        #         "config": {
+
+        #         "language": {
+
+        #         "sourceLanguage": "en",
+
+        #         "targetLanguage": "hi"
+
+        #         },
+
+        #         "serviceId": "ai4bharat/indictrans-v2-all-gpu--t4",
+
+        #         "numTranslation": "True"
+
+        #         }
+
+        #         }
+
+        #         ],
+
+        #         "inputData": {
+
+        #         "input": [
+
+        #         {
+
+        #         "source": text
+
+        #         }
+
+        #         ],
+
+        #         "audio": [
+
+        #         {
+
+        #         "audioContent": None
+
+        #         }
+
+        #         ]
+
+        #         }
+
+        #         }
+        # headers = {
+        #         'Authorization': 'DveTyi8IJRxMNJdbUI0EhiE1X0yQYmoIiNLafiNLYbr4K0JCmDxFasFbOQQgkz7w',
+        #         'Content-Type': 'application/json'
+        #     }
+        # response = requests.post(mt_api_url, json=mt_payload, headers=headers, timeout=30, verify=False)
+        # response.raise_for_status()
         
+        # # Return the response from the MT API
+        # mt_response = response.json()
+        # return jsonify(mt_response), response.status_code
         mt_api_url = mt_mappings[mapping_key]
         
         # Prepare the payload for the MT API
@@ -689,4 +815,4 @@ def health_check():
     })
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=8000)
+    app.run(debug=True, host='0.0.0.0', port=8002)

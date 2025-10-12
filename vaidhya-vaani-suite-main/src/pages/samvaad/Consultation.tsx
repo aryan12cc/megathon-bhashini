@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Mic, MicOff, Volume2, VolumeX } from "lucide-react";
+import { Mic, MicOff, Volume2, VolumeX, Play, Pause } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,112 +23,409 @@ type Chunk = {
 
 type SpeakerModule = "doctor" | "patient";
 
+type TranscriptResult = {
+  originalText: string;
+  translatedText: string;
+  audioUrl: string;
+};
+
 // Language options based on your API mappings
 const LANGUAGES = [
-  { value: "hindi", label: "Hindi (हिंदी)" },
-  { value: "english", label: "English" },
-  { value: "bengali", label: "Bengali (বাংলা)" },
-  { value: "gujarati", label: "Gujarati (ગુજરાતી)" },
-  { value: "kannada", label: "Kannada (ಕನ್ನಡ)" },
-  { value: "malayalam", label: "Malayalam (മലയാളം)" },
-  { value: "marathi", label: "Marathi (मराठी)" },
-  { value: "odia", label: "Odia (ଓଡ଼ିଆ)" },
-  { value: "punjabi", label: "Punjabi (ਪੰਜਾਬੀ)" },
-  { value: "tamil", label: "Tamil (தமிழ்)" },
-  { value: "telugu", label: "Telugu (తెలుగు)" },
+  { value: "Hindi", label: "Hindi (हिंदी)" },
+  { value: "English", label: "English" },
+  { value: "Bengali", label: "Bengali (বাংলা)" },
+  { value: "Gujarati", label: "Gujarati (ગુજરાતી)" },
+  { value: "Kannada", label: "Kannada (ಕನ್ನಡ)" },
+  { value: "Malayalam", label: "Malayalam (മലയാളം)" },
+  { value: "Marathi", label: "Marathi (मराठी)" },
+  { value: "Odia", label: "Odia (ଓଡ଼ିଆ)" },
+  { value: "Punjabi", label: "Punjabi (ਪੰਜਾਬੀ)" },
+  { value: "Tamil", label: "Tamil (தமிழ்)" },
+  { value: "Telugu", label: "Telugu (తెలుగు)" },
 ];
 
 const Consultation = () => {
   const [activeRecorder, setActiveRecorder] = useState<SpeakerModule | null>(null);
-  const [doctorChunks, setDoctorChunks] = useState<Chunk[]>([]);
-  const [patientChunks, setPatientChunks] = useState<Chunk[]>([]);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [doctorResult, setDoctorResult] = useState<TranscriptResult | null>(null);
+  const [patientResult, setPatientResult] = useState<TranscriptResult | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [isPlayingDoctor, setIsPlayingDoctor] = useState(false);
   const [isPlayingPatient, setIsPlayingPatient] = useState(false);
-  const [currentPlayingChunk, setCurrentPlayingChunk] = useState<{ speaker: SpeakerModule; index: number } | null>(null);
-  const [doctorLanguage, setDoctorLanguage] = useState<string>("english");
-  const [patientLanguage, setPatientLanguage] = useState<string>("hindi");
+  const [doctorLanguage, setDoctorLanguage] = useState<string>("English");
+  const [patientLanguage, setPatientLanguage] = useState<string>("Hindi");
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const chunkCounterRef = useRef(0);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
-  const playQueueRef = useRef<{ speaker: SpeakerModule; chunks: Chunk[] }>({ speaker: "doctor", chunks: [] });
 
-  // Send audio chunk to backend
-  const sendAudioChunk = async (audioBlob: Blob, speaker: SpeakerModule, chunkId: number, isLast: boolean) => {
-    const formData = new FormData();
-    formData.append("audio", audioBlob);
-    formData.append("speaker", speaker);
-    formData.append("chunkId", chunkId.toString());
-    formData.append("isLast", isLast.toString());
-    
-    // Add language information
-    const speakerLanguage = speaker === "doctor" ? doctorLanguage : patientLanguage;
-    const targetLanguage = speaker === "doctor" ? patientLanguage : doctorLanguage;
-    formData.append("sourceLanguage", speakerLanguage);
-    formData.append("targetLanguage", targetLanguage);
+  // Create conversation on component mount
+  useEffect(() => {
+    createNewConversation();
+  }, []);
 
+  const createNewConversation = async () => {
     try {
-      // TODO: Replace with actual backend endpoint
-      const response = await fetch("/api/transcribe", {
-        method: "POST",
-        body: formData,
+      const response = await fetch('http://localhost:8000/api/conversations/new', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userID: `user_${Date.now()}`,
+          userLanguage: patientLanguage,
+          personLanguage: doctorLanguage,
+        }),
       });
 
       const data = await response.json();
+      if (data.convoID) {
+        setConversationId(data.convoID);
+        toast.success("Conversation session started");
+      }
+    } catch (error) {
+      console.error("Error creating conversation:", error);
+      toast.error("Failed to start conversation session");
+    }
+  };
+
+  // Helper function to convert blob to WAV and save properly
+  const saveAudioAsWAV = async (audioBlob: Blob, speaker: SpeakerModule) => {
+    try {
+      // Convert blob to array buffer
+      const arrayBuffer = await audioBlob.arrayBuffer();
       
-      // Update chunks with transcription
-      const newChunk: Chunk = {
-        id: chunkId,
-        text: data.transcription,
-        audioBlob,
-        ttsAudioUrl: data.ttsAudioUrl,
-        isLast,
+      // Create a proper WAV file with headers
+      const wavBlob = await convertToWAV(arrayBuffer);
+      
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `${speaker}_recording_${timestamp}.wav`;
+      
+      // Save to s2s folder via server
+      const formData = new FormData();
+      formData.append('audio', wavBlob, filename);
+      formData.append('speaker', speaker);
+      return;
+      const response = await fetch('http://localhost:8001/save-audio', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Audio saved to server:', result.file_path);
+        return result.file_path;
+      } else {
+        throw new Error('Failed to save audio to server');
+      }
+    } catch (error) {
+      console.error('Error saving audio:', error);
+      // Fallback: save locally
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `${speaker}_recording_${timestamp}.wav`;
+      
+      const url = URL.createObjectURL(audioBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      console.log(`Audio downloaded locally as: ${filename}`);
+      return null;
+    }
+  };
+
+  // Convert audio buffer to proper WAV format
+  const convertToWAV = async (arrayBuffer: ArrayBuffer): Promise<Blob> => {
+    try {
+      // Create audio context with the correct sample rate
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
+      
+      // Convert to WAV format preserving original sample rate
+      const wav = encodeWAV(audioBuffer);
+      return new Blob([wav], { type: 'audio/wav' });
+    } catch (error) {
+      console.error('Error converting to WAV:', error);
+      // Fallback: return original blob
+      return new Blob([arrayBuffer], { type: 'audio/wav' });
+    }
+  };
+
+  // WAV encoding function with correct parameters
+  const encodeWAV = (audioBuffer: AudioBuffer): ArrayBuffer => {
+    const length = audioBuffer.length;
+    const sampleRate = audioBuffer.sampleRate; // Use original sample rate
+    const numberOfChannels = 1; // Always encode as mono to avoid issues
+    const bytesPerSample = 2; // 16-bit
+    const byteRate = sampleRate * numberOfChannels * bytesPerSample;
+    const blockAlign = numberOfChannels * bytesPerSample;
+    const dataSize = length * numberOfChannels * bytesPerSample;
+    
+    const arrayBuffer = new ArrayBuffer(44 + dataSize);
+    const view = new DataView(arrayBuffer);
+    let pos = 0;
+
+    // WAV header
+    const writeString = (str: string) => {
+      for (let i = 0; i < str.length; i++) {
+        view.setUint8(pos++, str.charCodeAt(i));
+      }
+    };
+
+    const writeUint32 = (data: number) => {
+      view.setUint32(pos, data, true);
+      pos += 4;
+    };
+
+    const writeUint16 = (data: number) => {
+      view.setUint16(pos, data, true);
+      pos += 2;
+    };
+
+    // RIFF chunk descriptor
+    writeString('RIFF');
+    writeUint32(36 + dataSize); // ChunkSize
+    writeString('WAVE');
+
+    // fmt sub-chunk
+    writeString('fmt ');
+    writeUint32(16); // Subchunk1Size for PCM
+    writeUint16(1); // AudioFormat (PCM)
+    writeUint16(numberOfChannels); // Mono
+    writeUint32(sampleRate);
+    writeUint32(byteRate);
+    writeUint16(blockAlign);
+    writeUint16(16); // BitsPerSample
+
+    // data sub-chunk
+    writeString('data');
+    writeUint32(dataSize);
+
+    // Write audio data - always convert to mono
+    const originalChannels = audioBuffer.numberOfChannels;
+    if (originalChannels === 1) {
+      // Already mono
+      const channelData = audioBuffer.getChannelData(0);
+      for (let i = 0; i < length; i++) {
+        const sample = Math.max(-1, Math.min(1, channelData[i]));
+        view.setInt16(pos, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+        pos += 2;
+      }
+    } else {
+      // Multi-channel - mix down to mono by averaging all channels
+      for (let i = 0; i < length; i++) {
+        let sample = 0;
+        for (let channel = 0; channel < originalChannels; channel++) {
+          sample += audioBuffer.getChannelData(channel)[i];
+        }
+        sample /= originalChannels; // Average all channels
+        sample = Math.max(-1, Math.min(1, sample));
+        view.setInt16(pos, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+        pos += 2;
+      }
+    }
+
+    return arrayBuffer;
+  };
+
+  // Process recorded audio through individual API calls
+  const processAudioWithS2S = async (audioBlob: Blob, speaker: SpeakerModule) => {
+    if (!conversationId) {
+      toast.error("No conversation session available");
+      return;
+    }
+
+    setIsProcessing(true);
+    
+    try {
+      const sourceLanguage = speaker === "doctor" ? doctorLanguage : patientLanguage;
+      const targetLanguage = speaker === "doctor" ? patientLanguage : doctorLanguage;
+      
+      console.log(`Processing ${speaker} audio: ${sourceLanguage} -> ${targetLanguage}`);
+      
+      // Save the audio file as proper WAV format
+      const savedFilePath = await saveAudioAsWAV(audioBlob, speaker);
+      if (savedFilePath) {
+        console.log('Audio saved to:', savedFilePath);
+      }
+      
+      // Step 1: Convert audio to text using ASR
+      const asrFormData = new FormData();
+      asrFormData.append('audio_file', audioBlob, 'recording.wav');
+      asrFormData.append('Language', sourceLanguage);
+
+      console.log('Calling ASR API with language:', sourceLanguage);
+      const asrResponse = await fetch('http://localhost:8002/asr', {
+        method: 'POST',
+        body: asrFormData,
+      });
+
+      if (!asrResponse.ok) {
+        const errorText = await asrResponse.text();
+        console.error('ASR Response error:', errorText);
+        throw new Error(`ASR processing failed: ${errorText}`);
+      }
+
+      const asrResult = await asrResponse.json();
+      console.log('ASR Result:', asrResult);
+      let originalText = '';
+      
+      if (asrResult.status === 'success' && asrResult.data?.recognized_text) {
+        originalText = asrResult.data.recognized_text;
+      } else if (asrResult.recognized_text) {
+        originalText = asrResult.recognized_text;
+      } else {
+        throw new Error('No text recognized from audio');
+      }
+
+      // Step 2: Translate text using MT
+      const mtResponse = await fetch('http://localhost:8002/mt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: originalText,
+          source: sourceLanguage,
+          dest: targetLanguage
+        }),
+      });
+
+      let translatedText = '';
+      
+      if (mtResponse.ok) {
+        const mtResult = await mtResponse.json();
+        
+        if (mtResult.status === 'success' && mtResult.data?.output_text) {
+          translatedText = mtResult.data.output_text;
+        } else if (mtResult.output_text) {
+          translatedText = mtResult.output_text;
+        } else {
+          console.warn('Translation API returned success but no text, using original');
+          translatedText = originalText;
+        }
+      } else {
+        const errorText = await mtResponse.text();
+        console.warn('Translation failed, using original text. Error:', errorText);
+        translatedText = originalText; // Fallback to original text
+      }
+
+      // Step 3: Generate audio using TTS
+      const ttsResponse = await fetch('http://localhost:8002/tts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: translatedText,
+          Language: targetLanguage
+        }),
+      });
+
+      let audioUrl = '';
+      if (ttsResponse.ok) {
+        const ttsResult = await ttsResponse.json();
+        if (ttsResult.status === 'success' && ttsResult.data?.s3_url) {
+          audioUrl = ttsResult.data.s3_url;
+        } else if (ttsResult.s3_url) {
+          audioUrl = ttsResult.s3_url;
+        }
+      } else {
+        const errorText = await ttsResponse.text();
+        console.warn('TTS failed, continuing without audio:', errorText);
+      }
+      
+      // Step 4: Add message to conversation
+      await fetch(`http://localhost:8000/api/conversations/add`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          convoID: conversationId,
+          speaker: speaker,
+          originalText: originalText,
+          originalLanguage: sourceLanguage,
+          translatedText: translatedText,
+          translatedLanguage: targetLanguage,
+          translatedText_EN: translatedText,
+          translatedLanguage_EN: "English"
+        }),
+      });
+
+      // Store the result
+      const result: TranscriptResult = {
+        originalText: originalText,
+        translatedText: translatedText,
+        audioUrl: audioUrl
       };
 
       if (speaker === "doctor") {
-        setDoctorChunks(prev => [...prev, newChunk]);
+        setDoctorResult(result);
       } else {
-        setPatientChunks(prev => [...prev, newChunk]);
+        setPatientResult(result);
       }
+
+      toast.success("Audio processed successfully");
     } catch (error) {
-      console.error("Error sending audio chunk:", error);
-      toast.error("Failed to transcribe audio");
+      console.error("Error processing audio:", error);
+      toast.error(`Failed to process audio: ${error.message}`);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   // Start recording
   const startRecording = async (speaker: SpeakerModule) => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      // Clear previous results when starting new recording
+      if (speaker === "doctor") {
+        setDoctorResult(null);
+      } else {
+        setPatientResult(null);
+      }
+
+      // Use specific audio constraints to ensure consistent recording
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 16000, // Match common ASR sample rate
+          channelCount: 1 // Force mono recording
+        } 
+      });
+      
+      // Create MediaRecorder with specific MIME type if supported
+      let options = {};
+      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+        options = { mimeType: 'audio/webm;codecs=opus' };
+      } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+        options = { mimeType: 'audio/webm' };
+      }
+      
+      const mediaRecorder = new MediaRecorder(stream, options);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
-      chunkCounterRef.current = 0;
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
-          const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-          const chunkId = chunkCounterRef.current++;
-          
-          sendAudioChunk(audioBlob, speaker, chunkId, false);
-          audioChunksRef.current = []; // Reset for next chunk
         }
       };
 
       mediaRecorder.onstop = () => {
-        // Send last chunk if any data remains
-        if (audioChunksRef.current.length > 0) {
-          const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-          const chunkId = chunkCounterRef.current++;
-          sendAudioChunk(audioBlob, speaker, chunkId, true);
-        }
+        // Process the complete recording
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/wav" });
+        processAudioWithS2S(audioBlob, speaker);
         
         stream.getTracks().forEach(track => track.stop());
       };
 
-      mediaRecorder.start(5000); // 5 second chunks
+      mediaRecorder.start();
       setActiveRecorder(speaker);
       toast.success(`${speaker === "doctor" ? "Doctor" : "Patient"} recording started`);
     } catch (error) {
@@ -155,85 +452,57 @@ const Consultation = () => {
     }
   };
 
-  // Play TTS chunks sequentially
-  const playChunks = (speaker: SpeakerModule) => {
-    const chunks = speaker === "doctor" ? patientChunks : doctorChunks;
-    const oppositeSpeaker = speaker === "doctor" ? "patient" : "doctor";
-    
-    if (chunks.length === 0) return;
+  // Play/pause audio
+  const toggleAudioPlayback = (speaker: SpeakerModule) => {
+    const result = speaker === "doctor" ? doctorResult : patientResult;
+    if (!result?.audioUrl) return;
 
-    playQueueRef.current = { speaker: oppositeSpeaker, chunks };
+    const isCurrentlyPlaying = speaker === "doctor" ? isPlayingDoctor : isPlayingPatient;
     
-    if (speaker === "doctor") {
-      setIsPlayingPatient(true);
-    } else {
-      setIsPlayingDoctor(true);
-    }
-
-    playNextChunk(oppositeSpeaker, 0);
-  };
-
-  const playNextChunk = (speaker: SpeakerModule, index: number) => {
-    const chunks = speaker === "doctor" ? doctorChunks : patientChunks;
-    
-    if (index >= chunks.length) {
-      // Check if last chunk is available
-      const lastChunk = chunks[chunks.length - 1];
-      if (lastChunk?.isLast) {
-        // All chunks played, stop
-        stopPlayback(speaker);
+    if (isCurrentlyPlaying) {
+      // Pause current audio
+      if (audioElementRef.current) {
+        audioElementRef.current.pause();
+        audioElementRef.current = null;
       }
-      return;
-    }
-
-    const chunk = chunks[index];
-    
-    if (!chunk.ttsAudioUrl) {
-      // Wait for TTS to be ready
-      setTimeout(() => playNextChunk(speaker, index), 500);
-      return;
-    }
-
-    setCurrentPlayingChunk({ speaker, index });
-
-    const audio = new Audio(chunk.ttsAudioUrl);
-    audioElementRef.current = audio;
-
-    audio.onended = () => {
-      if (chunk.isLast) {
-        stopPlayback(speaker);
+      
+      if (speaker === "doctor") {
+        setIsPlayingDoctor(false);
       } else {
-        playNextChunk(speaker, index + 1);
+        setIsPlayingPatient(false);
       }
-    };
-
-    audio.onerror = () => {
-      console.error("Error playing audio chunk");
-      playNextChunk(speaker, index + 1);
-    };
-
-    audio.play();
-  };
-
-  const stopPlayback = (speaker: SpeakerModule) => {
-    if (audioElementRef.current) {
-      audioElementRef.current.pause();
-      audioElementRef.current = null;
-    }
-    
-    if (speaker === "doctor") {
-      setIsPlayingDoctor(false);
     } else {
-      setIsPlayingPatient(false);
-    }
-    
-    setCurrentPlayingChunk(null);
-  };
+      // Start playing audio
+      const audio = new Audio(result.audioUrl);
+      audioElementRef.current = audio;
+      
+      audio.onended = () => {
+        if (speaker === "doctor") {
+          setIsPlayingDoctor(false);
+        } else {
+          setIsPlayingPatient(false);
+        }
+        audioElementRef.current = null;
+      };
 
-  // Check if can show listen button
-  const canShowListen = (speaker: SpeakerModule) => {
-    const chunks = speaker === "doctor" ? patientChunks : doctorChunks;
-    return chunks.length > 0 && chunks.some(c => c.isLast);
+      audio.onerror = () => {
+        toast.error("Error playing audio");
+        if (speaker === "doctor") {
+          setIsPlayingDoctor(false);
+        } else {
+          setIsPlayingPatient(false);
+        }
+        audioElementRef.current = null;
+      };
+
+      if (speaker === "doctor") {
+        setIsPlayingDoctor(true);
+      } else {
+        setIsPlayingPatient(true);
+      }
+      
+      audio.play();
+    }
   };
 
   // Cleanup on unmount
@@ -251,11 +520,10 @@ const Consultation = () => {
   const SpeakerModule = ({ speaker, title }: { speaker: SpeakerModule; title: string }) => {
     const isRecording = activeRecorder === speaker;
     const isOtherRecording = activeRecorder !== null && activeRecorder !== speaker;
-    const chunks = speaker === "doctor" ? doctorChunks : patientChunks;
+    const result = speaker === "doctor" ? doctorResult : patientResult;
     const isPlaying = speaker === "doctor" ? isPlayingDoctor : isPlayingPatient;
     const selectedLanguage = speaker === "doctor" ? doctorLanguage : patientLanguage;
     const setSelectedLanguage = speaker === "doctor" ? setDoctorLanguage : setPatientLanguage;
-    const oppositeChunks = speaker === "doctor" ? patientChunks : doctorChunks;
 
     return (
       <Card className="flex-1">
@@ -276,7 +544,7 @@ const Consultation = () => {
             <Select
               value={selectedLanguage}
               onValueChange={setSelectedLanguage}
-              disabled={isRecording || isOtherRecording}
+              disabled={isRecording || isOtherRecording || isProcessing}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select language" />
@@ -296,7 +564,7 @@ const Consultation = () => {
             <Button
               size="lg"
               onClick={() => toggleRecording(speaker)}
-              disabled={isOtherRecording}
+              disabled={isOtherRecording || isProcessing}
               className={isRecording ? "bg-destructive hover:bg-destructive/90" : "bg-gradient-primary"}
             >
               {isRecording ? (
@@ -313,48 +581,54 @@ const Consultation = () => {
             </Button>
           </div>
 
-          {/* Transcription Display */}
-          <div className="space-y-2 max-h-64 overflow-y-auto">
-            <h4 className="text-sm font-medium text-muted-foreground">Your Transcript:</h4>
-            {chunks.map((chunk, index) => (
-              <div key={chunk.id} className="p-2 bg-primary/5 rounded-md">
-                <p className="text-sm">{chunk.text}</p>
-                {chunk.isLast && (
-                  <Badge variant="secondary" className="mt-1 text-xs">Last Chunk</Badge>
-                )}
-              </div>
-            ))}
-            {chunks.length === 0 && (
-              <p className="text-sm text-muted-foreground">No transcription yet...</p>
-            )}
-          </div>
-
-          {/* Listen Control */}
-          {canShowListen(speaker) && !isPlaying && (
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => playChunks(speaker)}
-            >
-              <Volume2 className="mr-2 h-4 w-4" />
-              Listen to {speaker === "doctor" ? "Patient" : "Doctor"}
-            </Button>
+          {/* Processing indicator */}
+          {isProcessing && activeRecorder === speaker && (
+            <div className="text-center text-sm text-muted-foreground">
+              Processing audio...
+            </div>
           )}
 
-          {isPlaying && (
-            <div className="flex items-center justify-between p-3 bg-secondary/20 rounded-md">
-              <div className="flex items-center gap-2">
-                <VolumeX className="h-4 w-4 animate-pulse" />
-                <span className="text-sm">Playing...</span>
+          {/* Results Display */}
+          {result && (
+            <div className="space-y-4 p-4 bg-primary/5 rounded-md">
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-muted-foreground">Original Text:</h4>
+                <p className="text-sm">{result.originalText}</p>
               </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => stopPlayback(speaker)}
-              >
-                Stop
-              </Button>
+              
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-muted-foreground">Translation:</h4>
+                <p className="text-sm">{result.translatedText}</p>
+              </div>
+
+              {/* Audio playback control */}
+              <div className="flex items-center justify-center">
+                <Button
+                  variant="outline"
+                  onClick={() => toggleAudioPlayback(speaker)}
+                  disabled={isProcessing}
+                >
+                  {isPlaying ? (
+                    <>
+                      <Pause className="mr-2 h-4 w-4" />
+                      Pause Translation
+                    </>
+                  ) : (
+                    <>
+                      <Play className="mr-2 h-4 w-4" />
+                      Play Translation
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
+          )}
+
+          {/* No results message */}
+          {!result && !isProcessing && (
+            <p className="text-sm text-muted-foreground text-center">
+              No recording yet. Start recording to see transcription and translation.
+            </p>
           )}
         </CardContent>
       </Card>
