@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, ListChecks, Upload, Sparkles } from "lucide-react";
+import { ArrowLeft, ListChecks, Upload, Sparkles, Languages } from "lucide-react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
@@ -7,11 +7,36 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const LANGUAGES = [
+  { code: "English", name: "English" },
+  { code: "Hindi", name: "Hindi (हिन्दी)" },
+  { code: "Bengali", name: "Bengali (বাংলা)" },
+  { code: "Tamil", name: "Tamil (தமிழ்)" },
+  { code: "Telugu", name: "Telugu (తెలుగు)" },
+  { code: "Kannada", name: "Kannada (ಕನ್ನಡ)" },
+  { code: "Malayalam", name: "Malayalam (മലയാളം)" },
+  { code: "Marathi", name: "Marathi (मराठी)" },
+  { code: "Gujarati", name: "Gujarati (ગુજરાતી)" },
+  { code: "Punjabi", name: "Punjabi (ਪੰਜਾਬੀ)" },
+  { code: "Urdu", name: "Urdu (اردو)" },
+  { code: "Odia", name: "Odia (ଓଡ଼ିଆ)" },
+  { code: "Assamese", name: "Assamese (অসমীয়া)" },
+];
 
 const ActionPlan = () => {
   const [transcript, setTranscript] = useState("");
-  const [actionItems, setActionItems] = useState<string[]>([]);
+  const [actionItems, setActionItems] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [inputLanguage, setInputLanguage] = useState("English");
+  const [outputLanguage, setOutputLanguage] = useState("English");
   const { toast } = useToast();
 
   const handleGenerate = async () => {
@@ -26,27 +51,155 @@ const ActionPlan = () => {
 
     setIsGenerating(true);
     
-    // TODO: Integrate with Sarvam API for patient action plan generation
-    // const response = await fetch('/api/generate-action-plan', {
-    //   method: 'POST',
-    //   body: JSON.stringify({ transcript, targetLanguage: 'te' }),
-    // });
-    
-    // Simulate API call
-    setTimeout(() => {
-      setActionItems([
-        "రోజుకు మూడు సార్లు మందులు తీసుకోండి (Take medicines three times daily)",
-        "రక్త పరీక్ష చేయించుకోవడం మర్చిపోకండి (Don't forget to get blood test done)",
-        "2 వారాల తర్వాత మళ్లీ రండి (Visit again after 2 weeks)",
-        "ఎక్కువ నీరు త్రాగండి - రోజుకు 8 గ్లాసులు (Drink more water - 8 glasses daily)",
-        "ఎక్కువ ఉప్పు తినడం మానేయండి (Avoid eating too much salt)",
-      ]);
-      setIsGenerating(false);
+    try {
+      let englishTranscript = transcript;
+
+      // Step 1: Translate input to English (if not already English)
+      if (inputLanguage !== "English") {
+        toast({
+          title: "Processing",
+          description: `Translating transcript from ${inputLanguage} to English...`,
+        });
+
+        const inputMtResponse = await fetch('http://localhost:8005/mt', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text: transcript,
+            source: inputLanguage,
+            dest: "English"
+          })
+        });
+
+        if (!inputMtResponse.ok) {
+          throw new Error('Failed to translate input transcript to English');
+        }
+
+        const inputMtData = await inputMtResponse.json();
+        
+        if (inputMtData.status === "success" && inputMtData.data?.output_text) {
+          englishTranscript = inputMtData.data.output_text;
+        } else {
+          throw new Error('Translation to English failed');
+        }
+      }
+
+      // Step 2: Generate action plan in English using Gemini
       toast({
-        title: "Success",
-        description: "Action plan generated successfully",
+        title: "Processing",
+        description: "Generating action plan with AI...",
       });
-    }, 2000);
+
+      const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY || "AIzaSyDuYgCFGqLCKJr3b_VCYzjVTU8sUjqrMkc";
+      
+      const prompt = `You are a medical assistant. Generate a patient-friendly action plan from the following clinical consultation transcript. The action plan should be clear, simple, and easy to understand for patients.
+
+Format the output as a bulleted list with these sections:
+
+MEDICATIONS:
+• [List all medications with dosage and timing]
+
+FOLLOW-UP:
+• [When to visit again, what tests to get]
+
+LIFESTYLE CHANGES:
+• [Diet, exercise, habits to change]
+
+PRECAUTIONS:
+• [What to avoid, warning signs to watch for]
+
+Consultation Transcript:
+${englishTranscript}
+
+Please provide only the action plan without any additional commentary. Use simple language that patients can understand.`;
+
+      const geminiResponse = await fetch(
+        `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: prompt
+              }]
+            }]
+          })
+        }
+      );
+
+      if (!geminiResponse.ok) {
+        throw new Error('Failed to generate action plan with Gemini');
+      }
+
+      const geminiData = await geminiResponse.json();
+      const englishActionPlan = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (!englishActionPlan) {
+        throw new Error('No action plan generated');
+      }
+
+      // Step 3: Translate action plan to output language (if not English)
+      if (outputLanguage === "English") {
+        setActionItems(englishActionPlan);
+        toast({
+          title: "Success",
+          description: "Action plan generated successfully",
+        });
+      } else {
+        toast({
+          title: "Processing",
+          description: `Translating action plan to ${outputLanguage}...`,
+        });
+
+        const outputMtResponse = await fetch('http://localhost:8005/mt', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text: englishActionPlan,
+            source: "English",
+            dest: outputLanguage
+          })
+        });
+
+        if (!outputMtResponse.ok) {
+          throw new Error('Failed to translate action plan');
+        }
+
+        const outputMtData = await outputMtResponse.json();
+        
+        if (outputMtData.status === "success" && outputMtData.data?.output_text) {
+          setActionItems(outputMtData.data.output_text);
+          toast({
+            title: "Success",
+            description: `Action plan generated and translated to ${outputLanguage}`,
+          });
+        } else {
+          // Fallback to English if translation fails
+          setActionItems(englishActionPlan);
+          toast({
+            title: "Warning",
+            description: "Translation failed, showing English version",
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error generating action plan:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to generate action plan",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -82,6 +235,25 @@ const ActionPlan = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                <div className="mb-4">
+                  <label className="flex items-center gap-2 text-sm font-medium mb-2">
+                    <Languages className="h-4 w-4" />
+                    Input Language
+                  </label>
+                  <Select value={inputLanguage} onValueChange={setInputLanguage}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select input language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LANGUAGES.map((lang) => (
+                        <SelectItem key={lang.code} value={lang.code}>
+                          {lang.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <Textarea
                   placeholder="Enter consultation transcript here..."
                   value={transcript}
@@ -115,33 +287,47 @@ const ActionPlan = () => {
                   Patient Action Items
                 </CardTitle>
                 <CardDescription>
-                  Clear, bulleted instructions in Telugu
-                  <Badge variant="secondary" className="ml-2">తెలుగు</Badge>
+                  Clear, patient-friendly instructions
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {actionItems.length > 0 ? (
-                  <div className="space-y-4">
-                    {actionItems.map((item, index) => (
-                      <div key={index} className="flex gap-3 p-4 rounded-lg bg-muted">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
-                          {index + 1}
-                        </div>
-                        <p className="text-sm flex-1">{item}</p>
-                      </div>
-                    ))}
+                <div className="mb-4">
+                  <label className="flex items-center gap-2 text-sm font-medium mb-2">
+                    <Languages className="h-4 w-4" />
+                    Output Language
+                  </label>
+                  <Select value={outputLanguage} onValueChange={setOutputLanguage}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select output language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LANGUAGES.map((lang) => (
+                        <SelectItem key={lang.code} value={lang.code}>
+                          {lang.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Textarea
+                  value={actionItems}
+                  readOnly
+                  className="min-h-[400px] font-mono text-sm bg-muted whitespace-pre-wrap"
+                  placeholder="Action items will appear here after generation..."
+                />
+                
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-xs text-muted-foreground">
+                    <p>Input: <span className="font-semibold">{inputLanguage}</span></p>
+                    <p>Output: <span className="font-semibold">{outputLanguage}</span></p>
                   </div>
-                ) : (
-                  <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-                    Action items will appear here after generation...
-                  </div>
-                )}
-                {actionItems.length > 0 && (
-                  <p className="text-xs text-muted-foreground mt-4">
-                    {/* TODO: Add integration note */}
-                    Note: This is placeholder data. Actual implementation will use Sarvam API for translation.
-                  </p>
-                )}
+                  {actionItems && (
+                    <p className="text-xs text-green-600 font-medium">
+                      ✓ Action plan generated successfully
+                    </p>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
