@@ -31,7 +31,7 @@ const translations: Record<Language, Record<string, string>> = {
     'index.saaransh.title': 'Saaransh',
     'index.saaransh.description': 'AI-powered insights including clinical notes, action plans, and health summaries',
     'index.panchang.title': 'Panchang',
-    'index.panchang.description': 'Patient education with proactive learning assistance and medicine encyclopedia',
+    'index.panchang.description': 'Patient calendar for booking appointments, managing schedules, and tracking healthcare visits',
     'index.stats.tools': 'Specialized Tools',
     'index.stats.languages': 'Indian Languages',
     'index.stats.modules': 'Core Modules',
@@ -72,13 +72,13 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Panchang module
     'panchang.title': 'Panchang Module',
-    'panchang.subtitle': 'Personalized health education and medicine information in your language',
-    'panchang.proactive.title': 'Proactive Learning Assistant',
-    'panchang.proactive.description': 'Context-aware educational content delivered based on your diagnosis and prescriptions',
+    'panchang.subtitle': 'Your personal healthcare calendar for appointments and schedule management',
+    'panchang.proactive.title': 'Appointment Booking',
+    'panchang.proactive.description': 'Schedule and manage doctor appointments with smart calendar integration',
     'panchang.proactive.badge': 'Smart',
-    'panchang.encyclopedia.title': 'Interactive Medicine Encyclopedia',
-    'panchang.encyclopedia.description': 'Detailed medicine information with videos in your local language',
-    'panchang.encyclopedia.badge': 'Video',
+    'panchang.encyclopedia.title': 'Healthcare Schedule Tracker',
+    'panchang.encyclopedia.description': 'Track all your medical appointments, follow-ups, and medication schedules',
+    'panchang.encyclopedia.badge': 'Organized',
     
     // Common
     'common.explore': 'Explore',
@@ -90,7 +90,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.samvaad': 'संवाद',
     'nav.lipiGyan': 'लिपि-ज्ञान',
     'nav.saaransh': 'सारांश',
-    'nav.panchang': 'शिक्षा',
+    'nav.panchang': 'पंचांग',
     'nav.appName': 'वैद्य-वाणी',
     
     // Index page
@@ -102,8 +102,8 @@ const translations: Record<Language, Record<string, string>> = {
     'index.lipiGyan.description': 'प्रिस्क्रिप्शन, लैब रिपोर्ट और डिस्चार्ज सारांश के लिए दस्तावेज़ बुद्धिमत्ता',
     'index.saaransh.title': 'सारांश (सारांश)',
     'index.saaransh.description': 'क्लिनिकल नोट्स, एक्शन प्लान और स्वास्थ्य सारांश सहित एआई-संचालित अंतर्दृष्टि',
-    'index.panchang.title': 'शिक्षा (शिक्षा)',
-    'index.panchang.description': 'सक्रिय सीखने की सहायता और दवा विश्वकोश के साथ रोगी शिक्षा',
+    'index.panchang.title': 'पंचांग (कैलेंडर)',
+    'index.panchang.description': 'अपॉइंटमेंट बुक करने, शेड्यूल प्रबंधित करने और स्वास्थ्य सेवा यात्राओं को ट्रैक करने के लिए रोगी कैलेंडर',
     'index.stats.tools': 'विशेष उपकरण',
     'index.stats.languages': 'भारतीय भाषाएँ',
     'index.stats.modules': 'मुख्य मॉड्यूल',
@@ -143,14 +143,14 @@ const translations: Record<Language, Record<string, string>> = {
     'saaransh.actionPlan.badge': 'सरलीकृत',
     
     // Panchang module
-    'panchang.title': 'शिक्षा (शिक्षा) मॉड्यूल',
-    'panchang.subtitle': 'आपकी भाषा में व्यक्तिगत स्वास्थ्य शिक्षा और दवा की जानकारी',
-    'panchang.proactive.title': 'सक्रिय सीखने का सहायक',
-    'panchang.proactive.description': 'आपके निदान और प्रिस्क्रिप्शन के आधार पर संदर्भ-जागरूक शैक्षिक सामग्री',
+    'panchang.title': 'पंचांग (कैलेंडर) मॉड्यूल',
+    'panchang.subtitle': 'अपॉइंटमेंट और शेड्यूल प्रबंधन के लिए आपका व्यक्तिगत स्वास्थ्य सेवा कैलेंडर',
+    'panchang.proactive.title': 'अपॉइंटमेंट बुकिंग',
+    'panchang.proactive.description': 'स्मार्ट कैलेंडर एकीकरण के साथ डॉक्टर अपॉइंटमेंट शेड्यूल और प्रबंधित करें',
     'panchang.proactive.badge': 'स्मार्ट',
-    'panchang.encyclopedia.title': 'इंटरैक्टिव दवा विश्वकोश',
-    'panchang.encyclopedia.description': 'आपकी स्थानीय भाषा में वीडियो के साथ विस्तृत दवा की जानकारी',
-    'panchang.encyclopedia.badge': 'वीडियो',
+    'panchang.encyclopedia.title': 'स्वास्थ्य सेवा शेड्यूल ट्रैकर',
+    'panchang.encyclopedia.description': 'अपनी सभी चिकित्सा अपॉइंटमेंट, फॉलो-अप और दवा शेड्यूल ट्रैक करें',
+    'panchang.encyclopedia.badge': 'व्यवस्थित',
     
     // Common
     'common.explore': 'अन्वेषण करें',
@@ -162,7 +162,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.samvaad': 'సంవాద్',
     'nav.lipiGyan': 'లిపి-జ్ఞాన్',
     'nav.saaransh': 'సారాంశ్',
-    'nav.panchang': 'శిక్ష',
+    'nav.panchang': 'పంచాంగ్',
     'nav.appName': 'వైద్య-వాణి',
     
     // Index page
@@ -174,8 +174,8 @@ const translations: Record<Language, Record<string, string>> = {
     'index.lipiGyan.description': 'ప్రిస్క్రిప్షన్‌లు, ల్యాబ్ రిపోర్టులు మరియు డిశ్చార్జ్ సారాంశాల కోసం డాక్యుమెంట్ ఇంటెలిజెన్స్',
     'index.saaransh.title': 'సారాంశ్ (సారాంశం)',
     'index.saaransh.description': 'క్లినికల్ నోట్స్, యాక్షన్ ప్లాన్‌లు మరియు ఆరోగ్య సారాంశాలతో సహా AI-ఆధారిత అంతర్దృష్టులు',
-    'index.panchang.title': 'శిక్ష (విద్య)',
-    'index.panchang.description': 'క్రియాశీల అభ్యాస సహాయం మరియు ఔషధ విజ్ఞాన కోశంతో రోగి విద్య',
+    'index.panchang.title': 'పంచాంగ్ (క్యాలెండర్)',
+    'index.panchang.description': 'అపాయింట్‌మెంట్‌లను బుక్ చేసుకోవడానికి, షెడ్యూల్‌లను నిర్వహించడానికి మరియు ఆరోగ్య సంరక్షణ సందర్శనలను ట్రాక్ చేయడానికి పేషెంట్ క్యాలెండర్',
     'index.stats.tools': 'ప్రత్యేక సాధనాలు',
     'index.stats.languages': 'భారతీయ భాషలు',
     'index.stats.modules': 'ప్రధాన మాడ్యూళ్ళు',
@@ -215,14 +215,14 @@ const translations: Record<Language, Record<string, string>> = {
     'saaransh.actionPlan.badge': 'సరళీకృతం',
     
     // Panchang module
-    'panchang.title': 'శిక్ష (విద్య) మాడ్యూల్',
-    'panchang.subtitle': 'మీ భాషలో వ్యక్తిగత ఆరోగ్య విద్య మరియు ఔషధ సమాచారం',
-    'panchang.proactive.title': 'క్రియాశీల అభ్యాస సహాయకుడు',
-    'panchang.proactive.description': 'మీ డయాగ్నోసిస్ మరియు ప్రిస్క్రిప్షన్‌ల ఆధారంగా కాంటెక్స్ట్-అవేర్ విద్యా కంటెంట్',
+    'panchang.title': 'పంచాంగ్ (క్యాలెండర్) మాడ్యూల్',
+    'panchang.subtitle': 'అపాయింట్‌మెంట్‌లు మరియు షెడ్యూల్ నిర్వహణ కోసం మీ వ్యక్తిగత ఆరోగ్య సంరక్షణ క్యాలెండర్',
+    'panchang.proactive.title': 'అపాయింట్‌మెంట్ బుకింగ్',
+    'panchang.proactive.description': 'స్మార్ట్ క్యాలెండర్ ఇంటిగ్రేషన్‌తో డాక్టర్ అపాయింట్‌మెంట్‌లను షెడ్యూల్ చేయండి మరియు నిర్వహించండి',
     'panchang.proactive.badge': 'స్మార్ట్',
-    'panchang.encyclopedia.title': 'ఇంటరాక్టివ్ మెడిసిన్ ఎన్సైక్లోపీడియా',
-    'panchang.encyclopedia.description': 'మీ స్థానిక భాషలో వీడియోలతో వివరణాత్మక ఔషధ సమాచారం',
-    'panchang.encyclopedia.badge': 'వీడియో',
+    'panchang.encyclopedia.title': 'హెల్త్‌కేర్ షెడ్యూల్ ట్రాకర్',
+    'panchang.encyclopedia.description': 'మీ అన్ని వైద్య అపాయింట్‌మెంట్‌లు, ఫాలో-అప్‌లు మరియు మందుల షెడ్యూల్‌లను ట్రాక్ చేయండి',
+    'panchang.encyclopedia.badge': 'వ్యవస్థీకృతం',
     
     // Common
     'common.explore': 'అన్వేషించండి',
@@ -234,7 +234,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.samvaad': 'சம்வாத்',
     'nav.lipiGyan': 'லிபி-ஞான்',
     'nav.saaransh': 'சாரன்ஷ்',
-    'nav.panchang': 'ஷிக்ஷா',
+    'nav.panchang': 'பஞ்சாங்கம்',
     'nav.appName': 'வைத்ய-வாணி',
     
     // Index page
@@ -246,8 +246,8 @@ const translations: Record<Language, Record<string, string>> = {
     'index.lipiGyan.description': 'மருந்து சீட்டுகள், ஆய்வக அறிக்கைகள் மற்றும் வெளியேற்ற சுருக்கங்களுக்கான ஆவண நுண்ணறிவு',
     'index.saaransh.title': 'சாரன்ஷ் (சுருக்கம்)',
     'index.saaransh.description': 'மருத்துவ குறிப்புகள், செயல் திட்டங்கள் மற்றும் சுகாதார சுருக்கங்கள் உட்பட AI-இயங்கும் நுண்ணறிவுகள்',
-    'index.panchang.title': 'ஷிக்ஷா (கல்வி)',
-    'index.panchang.description': 'செயலில் கற்றல் உதவி மற்றும் மருந்து கலைக்களஞ்சியத்துடன் நோயாளி கல்வி',
+    'index.panchang.title': 'பஞ்சாங்கம் (நாட்காட்டி)',
+    'index.panchang.description': 'சந்திப்புகளை முன்பதிவு செய்வதற்கும், அட்டவணைகளை நிர்வகிப்பதற்கும், சுகாதார வருகைகளைக் கண்காணிப்பதற்கும் நோயாளி நாட்காட்டி',
     'index.stats.tools': 'சிறப்பு கருவிகள்',
     'index.stats.languages': 'இந்திய மொழிகள்',
     'index.stats.modules': 'முக்கிய தொகுதிகள்',
@@ -287,14 +287,14 @@ const translations: Record<Language, Record<string, string>> = {
     'saaransh.actionPlan.badge': 'எளிதாக்கப்பட்ட',
     
     // Panchang module
-    'panchang.title': 'ஷிக்ஷா (கல்வி) தொகுதி',
-    'panchang.subtitle': 'உங்கள் மொழியில் தனிப்பயனாக்கப்பட்ட சுகாதார கல்வி மற்றும் மருந்து தகவல்',
-    'panchang.proactive.title': 'செயலில் கற்றல் உதவியாளர்',
-    'panchang.proactive.description': 'உங்கள் நோயறிதல் மற்றும் மருந்து சீட்டுகளின் அடிப்படையில் சூழல்-அறிவுள்ள கல்வி உள்ளடக்கம்',
+    'panchang.title': 'பஞ்சாங்கம் (நாட்காட்டி) தொகுதி',
+    'panchang.subtitle': 'சந்திப்புகள் மற்றும் அட்டவணை நிர்வாகத்திற்கான உங்கள் தனிப்பட்ட சுகாதார நாட்காட்டி',
+    'panchang.proactive.title': 'சந்திப்பு முன்பதிவு',
+    'panchang.proactive.description': 'ஸ்மார்ட் நாட்காட்டி ஒருங்கிணைப்புடன் மருத்துவர் சந்திப்புகளை திட்டமிடுங்கள் மற்றும் நிர்வகிக்கவும்',
     'panchang.proactive.badge': 'ஸ்மார்ட்',
-    'panchang.encyclopedia.title': 'ஊடாடக்கூடிய மருந்து கலைக்களஞ்சியம்',
-    'panchang.encyclopedia.description': 'உங்கள் உள்ளூர் மொழியில் வீடியோக்களுடன் விரிவான மருந்து தகவல்',
-    'panchang.encyclopedia.badge': 'வீடியோ',
+    'panchang.encyclopedia.title': 'சுகாதார அட்டவணை கண்காணிப்பி',
+    'panchang.encyclopedia.description': 'உங்கள் அனைத்து மருத்துவ சந்திப்புகள், பின்தொடர்தல்கள் மற்றும் மருந்து அட்டவணைகளைக் கண்காணிக்கவும்',
+    'panchang.encyclopedia.badge': 'ஒழுங்கமைக்கப்பட்ட',
     
     // Common
     'common.explore': 'ஆராயுங்கள்',
@@ -306,7 +306,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.samvaad': 'সংবাদ',
     'nav.lipiGyan': 'লিপি-জ্ঞান',
     'nav.saaransh': 'সারাংশ',
-    'nav.panchang': 'শিক্ষা',
+    'nav.panchang': 'পঞ্জিকা',
     'nav.appName': 'বৈদ্য-বাণী',
     
     // Index page
@@ -318,8 +318,8 @@ const translations: Record<Language, Record<string, string>> = {
     'index.lipiGyan.description': 'প্রেসক্রিপশন, ল্যাব রিপোর্ট এবং ডিসচার্জ সারাংশের জন্য নথি বুদ্ধিমত্তা',
     'index.saaransh.title': 'সারাংশ (সারাংশ)',
     'index.saaransh.description': 'ক্লিনিকাল নোট, অ্যাকশন প্ল্যান এবং স্বাস্থ্য সারাংশ সহ AI-চালিত অন্তর্দৃষ্টি',
-    'index.panchang.title': 'শিক্ষা (শিক্ষা)',
-    'index.panchang.description': 'সক্রিয় শেখার সহায়তা এবং ওষুধ বিশ্বকোষ সহ রোগী শিক্ষা',
+    'index.panchang.title': 'পঞ্জিকা (ক্যালেন্ডার)',
+    'index.panchang.description': 'অ্যাপয়েন্টমেন্ট বুক করতে, সময়সূচী পরিচালনা করতে এবং স্বাস্থ্যসেবা ভিজিট ট্র্যাক করতে রোগীর ক্যালেন্ডার',
     'index.stats.tools': 'বিশেষায়িত সরঞ্জাম',
     'index.stats.languages': 'ভারতীয় ভাষা',
     'index.stats.modules': 'মূল মডিউল',
@@ -359,14 +359,14 @@ const translations: Record<Language, Record<string, string>> = {
     'saaransh.actionPlan.badge': 'সরলীকৃত',
     
     // Panchang module
-    'panchang.title': 'শিক্ষা (শিক্ষা) মডিউল',
-    'panchang.subtitle': 'আপনার ভাষায় ব্যক্তিগত স্বাস্থ্য শিক্ষা এবং ওষুধ তথ্য',
-    'panchang.proactive.title': 'সক্রিয় শেখার সহায়ক',
-    'panchang.proactive.description': 'আপনার নির্ণয় এবং প্রেসক্রিপশনের উপর ভিত্তি করে প্রসঙ্গ-সচেতন শিক্ষামূলক সামগ্রী',
+    'panchang.title': 'পঞ্জিকা (ক্যালেন্ডার) মডিউল',
+    'panchang.subtitle': 'অ্যাপয়েন্টমেন্ট এবং সময়সূচী পরিচালনার জন্য আপনার ব্যক্তিগত স্বাস্থ্যসেবা ক্যালেন্ডার',
+    'panchang.proactive.title': 'অ্যাপয়েন্টমেন্ট বুকিং',
+    'panchang.proactive.description': 'স্মার্ট ক্যালেন্ডার ইন্টিগ্রেশন সহ ডাক্তারের অ্যাপয়েন্টমেন্ট নির্ধারণ এবং পরিচালনা করুন',
     'panchang.proactive.badge': 'স্মার্ট',
-    'panchang.encyclopedia.title': 'ইন্টারেক্টিভ ওষুধ বিশ্বকোষ',
-    'panchang.encyclopedia.description': 'আপনার স্থানীয় ভাষায় ভিডিও সহ বিস্তারিত ওষুধ তথ্য',
-    'panchang.encyclopedia.badge': 'ভিডিও',
+    'panchang.encyclopedia.title': 'স্বাস্থ্যসেবা সময়সূচী ট্র্যাকার',
+    'panchang.encyclopedia.description': 'আপনার সমস্ত চিকিৎসা অ্যাপয়েন্টমেন্ট, ফলো-আপ এবং ওষুধের সময়সূচী ট্র্যাক করুন',
+    'panchang.encyclopedia.badge': 'সংগঠিত',
     
     // Common
     'common.explore': 'অন্বেষণ করুন',
