@@ -27,6 +27,7 @@ type TranscriptResult = {
   originalText: string;
   translatedText: string;
   audioUrl: string;
+  isBlobUrl?: boolean; // Track if this is a blob URL that needs cleanup
 };
 
 // Language options based on your API mappings
@@ -58,6 +59,7 @@ const Consultation = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
+  const blobUrlsRef = useRef<Set<string>>(new Set()); // Track blob URLs for cleanup
 
   // Create conversation on component mount
   useEffect(() => {
@@ -89,14 +91,31 @@ const Consultation = () => {
     }
   };
 
+  // Cleanup function for blob URLs
+  const cleanupBlobUrl = (url: string) => {
+    if (url.startsWith('blob:') && blobUrlsRef.current.has(url)) {
+      URL.revokeObjectURL(url);
+      blobUrlsRef.current.delete(url);
+      console.log('Cleaned up blob URL:', url);
+    }
+  };
+
   // Helper function to convert blob to WAV and save properly
   const saveAudioAsWAV = async (audioBlob: Blob, speaker: SpeakerModule) => {
     try {
+      console.log(`Saving audio for ${speaker}, blob size:`, audioBlob.size);
+      
+      if (!audioBlob || audioBlob.size === 0) {
+        throw new Error('Audio blob is empty or null');
+      }
+
       // Convert blob to array buffer
       const arrayBuffer = await audioBlob.arrayBuffer();
+      console.log('Array buffer size:', arrayBuffer.byteLength);
       
       // Create a proper WAV file with headers
       const wavBlob = await convertToWAV(arrayBuffer);
+      console.log('WAV blob size:', wavBlob.size);
       
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const filename = `${speaker}_recording_${timestamp}.wav`;
@@ -105,18 +124,25 @@ const Consultation = () => {
       const formData = new FormData();
       formData.append('audio', wavBlob, filename);
       formData.append('speaker', speaker);
-      return;
-      const response = await fetch('http://localhost:8001/save-audio', {
-        method: 'POST',
-        body: formData,
-      });
       
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Audio saved to server:', result.file_path);
-        return result.file_path;
-      } else {
-        throw new Error('Failed to save audio to server');
+      // Try to save to server (commented out the early return)
+      try {
+        const response = await fetch('http://localhost:8001/save-audio', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Audio saved to server:', result.file_path);
+          return result.file_path;
+        } else {
+          throw new Error('Failed to save audio to server');
+        }
+      } catch (serverError) {
+        console.warn('Server save failed, falling back to local save:', serverError);
+        // Fallback to local save
+        throw serverError;
       }
     } catch (error) {
       console.error('Error saving audio:', error);
@@ -141,16 +167,37 @@ const Consultation = () => {
   // Convert audio buffer to proper WAV format
   const convertToWAV = async (arrayBuffer: ArrayBuffer): Promise<Blob> => {
     try {
+      console.log('Converting to WAV, input buffer size:', arrayBuffer.byteLength);
+      
+      if (arrayBuffer.byteLength === 0) {
+        throw new Error('Input array buffer is empty');
+      }
+
       // Create audio context with the correct sample rate
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
       
+      console.log('Audio buffer decoded:', {
+        duration: audioBuffer.duration,
+        sampleRate: audioBuffer.sampleRate,
+        numberOfChannels: audioBuffer.numberOfChannels,
+        length: audioBuffer.length
+      });
+      
+      if (audioBuffer.length === 0) {
+        throw new Error('Decoded audio buffer is empty');
+      }
+      
       // Convert to WAV format preserving original sample rate
       const wav = encodeWAV(audioBuffer);
-      return new Blob([wav], { type: 'audio/wav' });
+      const wavBlob = new Blob([wav], { type: 'audio/wav' });
+      
+      console.log('WAV conversion successful, output size:', wavBlob.size);
+      return wavBlob;
     } catch (error) {
       console.error('Error converting to WAV:', error);
-      // Fallback: return original blob
+      console.log('Falling back to original blob with WAV type');
+      // Fallback: return original blob with WAV type
       return new Blob([arrayBuffer], { type: 'audio/wav' });
     }
   };
@@ -239,6 +286,21 @@ const Consultation = () => {
       return;
     }
 
+    console.log(`Starting processAudioWithS2S for ${speaker}`);
+    console.log('Audio blob details:', {
+      size: audioBlob?.size,
+      type: audioBlob?.type,
+      isNull: audioBlob === null,
+      isUndefined: audioBlob === undefined
+    });
+
+    // Validate audio blob
+    if (!audioBlob || audioBlob.size === 0) {
+      console.error('Audio blob is null, undefined, or empty');
+      toast.error("No audio data recorded. Please try recording again.");
+      return;
+    }
+
     setIsProcessing(true);
     
     try {
@@ -248,22 +310,38 @@ const Consultation = () => {
       console.log(`Processing ${speaker} audio: ${sourceLanguage} -> ${targetLanguage}`);
       
       // Save the audio file as proper WAV format
+      console.log('Attempting to save audio as WAV...');
       const savedFilePath = await saveAudioAsWAV(audioBlob, speaker);
       if (savedFilePath) {
         console.log('Audio saved to:', savedFilePath);
+      } else {
+        console.log('Audio saved locally (server save failed)');
+      }
+      
+      // Convert the audio blob to WAV format for ASR API
+      let processedAudioBlob;
+      try {
+        const arrayBuffer = await audioBlob.arrayBuffer();
+        processedAudioBlob = await convertToWAV(arrayBuffer);
+        console.log('Converted to WAV for ASR. Size:', processedAudioBlob.size);
+      } catch (conversionError) {
+        console.warn('WAV conversion failed, using original blob:', conversionError);
+        processedAudioBlob = audioBlob;
       }
       
       // Step 1: Convert audio to text using ASR
       const asrFormData = new FormData();
-      asrFormData.append('audio_file', audioBlob, 'recording.wav');
+      asrFormData.append('audio_file', processedAudioBlob, 'recording.wav');
       asrFormData.append('Language', sourceLanguage);
 
       console.log('Calling ASR API with language:', sourceLanguage);
+      console.log('FormData audio file size:', processedAudioBlob.size);
+      
       const asrResponse = await fetch('http://localhost:8002/asr', {
         method: 'POST',
         body: asrFormData,
       });
-
+      console.log('ASR API response status:', asrResponse);
       if (!asrResponse.ok) {
         const errorText = await asrResponse.text();
         console.error('ASR Response error:', errorText);
@@ -329,10 +407,128 @@ const Consultation = () => {
       let audioUrl = '';
       if (ttsResponse.ok) {
         const ttsResult = await ttsResponse.json();
-        if (ttsResult.status === 'success' && ttsResult.data?.s3_url) {
+        console.log('TTS Result:', ttsResult);
+        console.log('TTS Result structure:', JSON.stringify(ttsResult, null, 2));
+        
+        // Handle new Base64 format - check multiple possible locations
+        let base64Audio = '';
+        
+        // Check all possible locations for base64 data
+        if (ttsResult.status === 'success' && ttsResult.data?.audio_base64) {
+          base64Audio = ttsResult.data.audio_base64;
+          console.log('Found base64 in ttsResult.data.audio_base64');
+        } else if (ttsResult.data?.base64) {
+          base64Audio = ttsResult.data.base64;
+          console.log('Found base64 in ttsResult.data.base64');
+        } else if (ttsResult.data?.audio) {
+          base64Audio = ttsResult.data.audio;
+          console.log('Found base64 in ttsResult.data.audio');
+        } else if (ttsResult.base64) {
+          base64Audio = ttsResult.base64;
+          console.log('Found base64 in ttsResult.base64');
+        } else if (ttsResult.audio) {
+          base64Audio = ttsResult.audio;
+          console.log('Found base64 in ttsResult.audio');
+        } else if (ttsResult.audio_base64) {
+          base64Audio = ttsResult.audio_base64;
+          console.log('Found base64 in ttsResult.audio_base64');
+        } else if (ttsResult.status === 'success' && ttsResult.data?.s3_url) {
+          // Fallback to old s3_url format if base64 not available
           audioUrl = ttsResult.data.s3_url;
+          console.log('Using S3 URL from ttsResult.data.s3_url');
+        } else if (ttsResult.data?.audio_url) {
+          // Check for audio_url as well
+          audioUrl = ttsResult.data.audio_url;
+          console.log('Using audio URL from ttsResult.data.audio_url');
         } else if (ttsResult.s3_url) {
+          // Fallback to old s3_url format if base64 not available
           audioUrl = ttsResult.s3_url;
+          console.log('Using S3 URL from ttsResult.s3_url');
+        }
+        
+        console.log('Base64 audio length:', base64Audio ? base64Audio.length : 0);
+        
+        // Convert Base64 to blob URL if base64 data is available
+        if (base64Audio && base64Audio.length > 0) {
+          try {
+            console.log('Converting Base64 to audio blob...');
+            console.log('Base64 preview (first 100 chars):', base64Audio.substring(0, 100));
+            
+            // Remove data URL prefix if present (e.g., "data:audio/wav;base64,")
+            const base64Data = base64Audio.includes(',') ? base64Audio.split(',')[1] : base64Audio;
+            console.log('Base64 data after prefix removal length:', base64Data.length);
+            
+            // Validate base64 format
+            if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64Data)) {
+              throw new Error('Invalid base64 format');
+            }
+            
+            // Convert base64 to binary
+            const binaryString = atob(base64Data);
+            console.log('Binary string length:', binaryString.length);
+            
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+              bytes[i] = binaryString.charCodeAt(i);
+            }
+            
+            // Try different audio MIME types
+            const possibleTypes = [
+              'audio/wav',
+              'audio/mpeg',
+              'audio/mp3',
+              'audio/ogg',
+              'audio/webm'
+            ];
+            
+            let audioBlob;
+            // Default to wav first
+            audioBlob = new Blob([bytes], { type: 'audio/wav' });
+            
+            console.log('Audio blob created:', {
+              size: audioBlob.size,
+              type: audioBlob.type
+            });
+            
+            if (audioBlob.size === 0) {
+              throw new Error('Generated audio blob is empty');
+            }
+            
+            audioUrl = URL.createObjectURL(audioBlob);
+            
+            // Track blob URL for cleanup
+            blobUrlsRef.current.add(audioUrl);
+            
+            console.log('Successfully converted Base64 to blob URL:', audioUrl);
+            
+            // Test if the audio can be loaded
+            const testAudio = new Audio();
+            testAudio.oncanplaythrough = () => {
+              console.log('Audio blob is valid and can be played');
+              testAudio.remove();
+            };
+            testAudio.onerror = (e) => {
+              console.error('Audio blob validation failed:', e);
+              testAudio.remove();
+            };
+            testAudio.src = audioUrl;
+            
+          } catch (base64Error) {
+            console.error('Error converting Base64 to audio:', base64Error);
+            console.error('Base64 error details:', {
+              name: base64Error.name,
+              message: base64Error.message,
+              stack: base64Error.stack
+            });
+            console.warn('TTS Base64 conversion failed, continuing without audio');
+            audioUrl = ''; // Reset to empty
+          }
+        } else {
+          console.warn('No base64 audio data found in TTS response');
+          console.log('Available fields in ttsResult:', Object.keys(ttsResult));
+          if (ttsResult.data) {
+            console.log('Available fields in ttsResult.data:', Object.keys(ttsResult.data));
+          }
         }
       } else {
         const errorText = await ttsResponse.text();
@@ -361,8 +557,15 @@ const Consultation = () => {
       const result: TranscriptResult = {
         originalText: originalText,
         translatedText: translatedText,
-        audioUrl: audioUrl
+        audioUrl: audioUrl,
+        isBlobUrl: audioUrl.startsWith('blob:') // Mark if this is a blob URL
       };
+
+      // Clean up previous blob URL if speaker has a previous result
+      const previousResult = speaker === "doctor" ? doctorResult : patientResult;
+      if (previousResult?.audioUrl && previousResult.isBlobUrl) {
+        cleanupBlobUrl(previousResult.audioUrl);
+      }
 
       if (speaker === "doctor") {
         setDoctorResult(result);
@@ -382,7 +585,12 @@ const Consultation = () => {
   // Start recording
   const startRecording = async (speaker: SpeakerModule) => {
     try {
-      // Clear previous results when starting new recording
+      // Clear previous results when starting new recording and clean up blob URLs
+      const previousResult = speaker === "doctor" ? doctorResult : patientResult;
+      if (previousResult?.audioUrl && previousResult.isBlobUrl) {
+        cleanupBlobUrl(previousResult.audioUrl);
+      }
+      
       if (speaker === "doctor") {
         setDoctorResult(null);
       } else {
@@ -412,20 +620,50 @@ const Consultation = () => {
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
+        console.log('MediaRecorder data available:', {
+          dataSize: event.data.size,
+          dataType: event.data.type
+        });
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
         }
       };
 
       mediaRecorder.onstop = () => {
-        // Process the complete recording
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/wav" });
-        processAudioWithS2S(audioBlob, speaker);
+        console.log('MediaRecorder stopped. Audio chunks:', audioChunksRef.current.length);
+        console.log('Total chunks size:', audioChunksRef.current.reduce((total, chunk) => total + chunk.size, 0));
         
+        // Process the complete recording
+        if (audioChunksRef.current.length === 0) {
+          console.error('No audio chunks recorded');
+          toast.error("No audio was recorded. Please try again.");
+          stream.getTracks().forEach(track => track.stop());
+          return;
+        }
+        
+        // Use the same MIME type as recording for the blob
+        const mimeType = mediaRecorder.mimeType || "audio/webm";
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+        
+        console.log('Created audio blob:', {
+          size: audioBlob.size,
+          type: audioBlob.type
+        });
+        
+        if (audioBlob.size === 0) {
+          console.error('Audio blob is empty');
+          toast.error("Recorded audio is empty. Please try again.");
+          stream.getTracks().forEach(track => track.stop());
+          return;
+        }
+        
+        processAudioWithS2S(audioBlob, speaker);
         stream.getTracks().forEach(track => track.stop());
       };
 
       mediaRecorder.start();
+      console.log('MediaRecorder started with options:', options);
+      console.log('MediaRecorder MIME type:', mediaRecorder.mimeType);
       setActiveRecorder(speaker);
       toast.success(`${speaker === "doctor" ? "Doctor" : "Patient"} recording started`);
     } catch (error) {
@@ -455,12 +693,24 @@ const Consultation = () => {
   // Play/pause audio
   const toggleAudioPlayback = (speaker: SpeakerModule) => {
     const result = speaker === "doctor" ? doctorResult : patientResult;
-    if (!result?.audioUrl) return;
+    
+    console.log('toggleAudioPlayback called for:', speaker);
+    console.log('Result:', result);
+    console.log('Audio URL:', result?.audioUrl);
+    console.log('Audio URL type:', typeof result?.audioUrl);
+    console.log('Audio URL length:', result?.audioUrl?.length);
+    
+    if (!result?.audioUrl) {
+      console.error('No audio URL available for playback');
+      toast.error("No audio available to play");
+      return;
+    }
 
     const isCurrentlyPlaying = speaker === "doctor" ? isPlayingDoctor : isPlayingPatient;
     
     if (isCurrentlyPlaying) {
       // Pause current audio
+      console.log('Pausing audio for:', speaker);
       if (audioElementRef.current) {
         audioElementRef.current.pause();
         audioElementRef.current = null;
@@ -473,35 +723,111 @@ const Consultation = () => {
       }
     } else {
       // Start playing audio
-      const audio = new Audio(result.audioUrl);
-      audioElementRef.current = audio;
+      console.log('Starting audio playback for:', speaker);
+      console.log('Creating Audio element with URL:', result.audioUrl);
       
-      audio.onended = () => {
+      try {
+        const audio = new Audio();
+        audioElementRef.current = audio;
+        
+        // Add comprehensive event listeners for debugging
+        audio.onloadstart = () => {
+          console.log('Audio load started');
+        };
+        
+        audio.onloadeddata = () => {
+          console.log('Audio data loaded');
+        };
+        
+        audio.oncanplay = () => {
+          console.log('Audio can play');
+        };
+        
+        audio.oncanplaythrough = () => {
+          console.log('Audio can play through');
+        };
+        
+        audio.onended = () => {
+          console.log('Audio playback ended');
+          if (speaker === "doctor") {
+            setIsPlayingDoctor(false);
+          } else {
+            setIsPlayingPatient(false);
+          }
+          audioElementRef.current = null;
+        };
+
+        audio.onerror = (e) => {
+          console.error('Audio playback error:', e);
+          console.error('Audio error details:', {
+            error: audio.error,
+            networkState: audio.networkState,
+            readyState: audio.readyState,
+            src: audio.src
+          });
+          
+          let errorMessage = "Error playing audio";
+          if (audio.error) {
+            switch (audio.error.code) {
+              case audio.error.MEDIA_ERR_ABORTED:
+                errorMessage = "Audio playback aborted";
+                break;
+              case audio.error.MEDIA_ERR_NETWORK:
+                errorMessage = "Network error during audio playback";
+                break;
+              case audio.error.MEDIA_ERR_DECODE:
+                errorMessage = "Audio decode error";
+                break;
+              case audio.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+                errorMessage = "Audio format not supported";
+                break;
+            }
+          }
+          
+          toast.error(errorMessage);
+          if (speaker === "doctor") {
+            setIsPlayingDoctor(false);
+          } else {
+            setIsPlayingPatient(false);
+          }
+          audioElementRef.current = null;
+        };
+
+        // Set the source and attempt to play
+        audio.src = result.audioUrl;
+        console.log('Audio source set, attempting to play...');
+        
+        if (speaker === "doctor") {
+          setIsPlayingDoctor(true);
+        } else {
+          setIsPlayingPatient(true);
+        }
+        
+        // Use promise-based play for better error handling
+        audio.play().then(() => {
+          console.log('Audio play() succeeded');
+        }).catch((playError) => {
+          console.error('Audio play() failed:', playError);
+          toast.error(`Failed to play audio: ${playError.message}`);
+          
+          if (speaker === "doctor") {
+            setIsPlayingDoctor(false);
+          } else {
+            setIsPlayingPatient(false);
+          }
+          audioElementRef.current = null;
+        });
+        
+      } catch (audioCreationError) {
+        console.error('Error creating Audio element:', audioCreationError);
+        toast.error("Failed to create audio player");
+        
         if (speaker === "doctor") {
           setIsPlayingDoctor(false);
         } else {
           setIsPlayingPatient(false);
         }
-        audioElementRef.current = null;
-      };
-
-      audio.onerror = () => {
-        toast.error("Error playing audio");
-        if (speaker === "doctor") {
-          setIsPlayingDoctor(false);
-        } else {
-          setIsPlayingPatient(false);
-        }
-        audioElementRef.current = null;
-      };
-
-      if (speaker === "doctor") {
-        setIsPlayingDoctor(true);
-      } else {
-        setIsPlayingPatient(true);
       }
-      
-      audio.play();
     }
   };
 
@@ -514,6 +840,11 @@ const Consultation = () => {
       if (audioElementRef.current) {
         audioElementRef.current.pause();
       }
+      // Clean up all blob URLs
+      blobUrlsRef.current.forEach(url => {
+        URL.revokeObjectURL(url);
+      });
+      blobUrlsRef.current.clear();
     };
   }, []);
 
@@ -606,7 +937,7 @@ const Consultation = () => {
                 <Button
                   variant="outline"
                   onClick={() => toggleAudioPlayback(speaker)}
-                  disabled={isProcessing}
+                  disabled={isProcessing || !result.audioUrl}
                 >
                   {isPlaying ? (
                     <>
@@ -616,11 +947,18 @@ const Consultation = () => {
                   ) : (
                     <>
                       <Play className="mr-2 h-4 w-4" />
-                      Play Translation
+                      {result.audioUrl ? "Play Translation" : "No Audio Available"}
                     </>
                   )}
                 </Button>
               </div>
+              
+              {/* Debug info for audio URL */}
+              {result.audioUrl && (
+                <div className="text-xs text-muted-foreground text-center">
+                  Audio: {result.isBlobUrl ? "Generated" : "External"} ({result.audioUrl.substring(0, 50)}...)
+                </div>
+              )}
             </div>
           )}
 
