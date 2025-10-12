@@ -25,7 +25,6 @@ import Discharge from "./pages/lipi-gyan/Discharge";
 // Saaransh Sub-features
 import ClinicalNotes from "./pages/saaransh/ClinicalNotes";
 import ActionPlan from "./pages/saaransh/ActionPlan";
-import HealthSummary from "./pages/saaransh/HealthSummary";
 
 const queryClient = new QueryClient();
 
@@ -57,7 +56,6 @@ const App = () => (
           {/* Saaransh Sub-routes */}
           <Route path="/saaransh/clinical-notes" element={<ClinicalNotes />} />
           <Route path="/saaransh/action-plan" element={<ActionPlan />} />
-          <Route path="/saaransh/health-summary" element={<HealthSummary />} />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

@@ -21,13 +21,6 @@ const Saaransh = () => {
       path: "/saaransh/action-plan",
       badge: t('saaransh.actionPlan.badge'),
     },
-    {
-      title: t('saaransh.healthSummary.title'),
-      description: t('saaransh.healthSummary.description'),
-      icon: CalendarClock,
-      path: "/saaransh/health-summary",
-      badge: t('saaransh.healthSummary.badge'),
-    },
   ];
 
   return (

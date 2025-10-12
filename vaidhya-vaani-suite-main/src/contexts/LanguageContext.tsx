@@ -69,9 +69,6 @@ const translations: Record<Language, Record<string, string>> = {
     'saaransh.actionPlan.title': "Patient's Action Plan",
     'saaransh.actionPlan.description': "Simple, bulleted action items extracted from consultation in patient's language",
     'saaransh.actionPlan.badge': 'Simplified',
-    'saaransh.healthSummary.title': 'Longitudinal Health Summary',
-    'saaransh.healthSummary.description': "Chronological overview of patient's medical history from multiple documents",
-    'saaransh.healthSummary.badge': 'Timeline',
     
     // Panchang module
     'panchang.title': 'Panchang Module',
@@ -144,9 +141,6 @@ const translations: Record<Language, Record<string, string>> = {
     'saaransh.actionPlan.title': 'रोगी की कार्य योजना',
     'saaransh.actionPlan.description': 'रोगी की भाषा में परामर्श से निकाले गए सरल, बुलेटेड कार्य आइटम',
     'saaransh.actionPlan.badge': 'सरलीकृत',
-    'saaransh.healthSummary.title': 'अनुदैर्ध्य स्वास्थ्य सारांश',
-    'saaransh.healthSummary.description': 'कई दस्तावेज़ों से रोगी के चिकित्सा इतिहास का कालानुक्रमिक अवलोकन',
-    'saaransh.healthSummary.badge': 'समयरेखा',
     
     // Panchang module
     'panchang.title': 'शिक्षा (शिक्षा) मॉड्यूल',
@@ -219,9 +213,6 @@ const translations: Record<Language, Record<string, string>> = {
     'saaransh.actionPlan.title': 'పేషెంట్ యాక్షన్ ప్లాన్',
     'saaransh.actionPlan.description': 'పేషెంట్ భాషలో కన్సల్టేషన్ నుండి సేకరించిన సాధారణ, బుల్లెట్ యాక్షన్ ఐటమ్‌లు',
     'saaransh.actionPlan.badge': 'సరళీకృతం',
-    'saaransh.healthSummary.title': 'లాంగిట్యూడినల్ హెల్త్ సమ్మరీ',
-    'saaransh.healthSummary.description': 'అనేక పత్రాల నుండి పేషెంట్ వైద్య చరిత్ర యొక్క కాలక్రమ అవలోకనం',
-    'saaransh.healthSummary.badge': 'టైమ్‌లైన్',
     
     // Panchang module
     'panchang.title': 'శిక్ష (విద్య) మాడ్యూల్',
@@ -294,9 +285,6 @@ const translations: Record<Language, Record<string, string>> = {
     'saaransh.actionPlan.title': 'நோயாளியின் செயல் திட்டம்',
     'saaransh.actionPlan.description': 'நோயாளியின் மொழியில் ஆலோசனையிலிருந்து பிரித்தெடுக்கப்பட்ட எளிய, புள்ளி செயல் உருப்படிகள்',
     'saaransh.actionPlan.badge': 'எளிதாக்கப்பட்ட',
-    'saaransh.healthSummary.title': 'நீள்வழி சுகாதார சுருக்கம்',
-    'saaransh.healthSummary.description': 'பல ஆவணங்களிலிருந்து நோயாளியின் மருத்துவ வரலாற்றின் காலவரிசை மேலோட்டம்',
-    'saaransh.healthSummary.badge': 'காலவரிசை',
     
     // Panchang module
     'panchang.title': 'ஷிக்ஷா (கல்வி) தொகுதி',
@@ -369,9 +357,6 @@ const translations: Record<Language, Record<string, string>> = {
     'saaransh.actionPlan.title': 'রোগীর কর্ম পরিকল্পনা',
     'saaransh.actionPlan.description': "রোগীর ভাষায় পরামর্শ থেকে নিষ্কাশিত সহজ, বুলেটেড অ্যাকশন আইটেম",
     'saaransh.actionPlan.badge': 'সরলীকৃত',
-    'saaransh.healthSummary.title': 'দীর্ঘকালীন স্বাস্থ্য সারাংশ',
-    'saaransh.healthSummary.description': 'একাধিক নথি থেকে রোগীর চিকিৎসা ইতিহাসের কালানুক্রমিক ওভারভিউ',
-    'saaransh.healthSummary.badge': 'টাইমলাইন',
     
     // Panchang module
     'panchang.title': 'শিক্ষা (শিক্ষা) মডিউল',
