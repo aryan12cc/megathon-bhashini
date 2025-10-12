@@ -27,3 +27,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+**/package-lock.json
+**/yarn.lock
+**/pnpm-lock.yaml
+client_secret_939597708417-r3k4damgmlqeijps5k4up0gnl3280bt7.apps.googleusercontent.com.json

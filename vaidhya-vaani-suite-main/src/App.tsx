@@ -4,6 +4,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import { Login } from "@/pages/Login";
+import LoginSuccess from "@/pages/LoginSuccess";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -34,37 +38,43 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <LanguageProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-          <Route path="/" element={<Index />} />
-          
-          {/* Main Module Routes */}
-          <Route path="/samvaad" element={<Samvaad />} />
-          <Route path="/lipi-gyan" element={<LipiGyan />} />
-          <Route path="/saaransh" element={<Saaransh />} />
-          <Route path="/siksha" element={<Siksha />} />
-          
-          {/* Samvaad Sub-routes */}
-          <Route path="/samvaad/consultation" element={<Consultation />} />
-          <Route path="/samvaad/triage" element={<Triage />} />
-          <Route path="/samvaad/pharmacy" element={<Pharmacy />} />
-          
-          {/* Lipi-Gyan Sub-routes */}
-          <Route path="/lipi-gyan/prescription" element={<Prescription />} />
-          <Route path="/lipi-gyan/lab-report" element={<LabReport />} />
-          <Route path="/lipi-gyan/discharge" element={<Discharge />} />
-          
-          {/* Saaransh Sub-routes */}
-          <Route path="/saaransh/clinical-notes" element={<ClinicalNotes />} />
-          <Route path="/saaransh/action-plan" element={<ActionPlan />} />
-          <Route path="/saaransh/health-summary" element={<HealthSummary />} />
-          
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/login/success" element={<LoginSuccess />} />
+              
+              <Route element={<ProtectedRoute />}>
+                <Route path="/" element={<Index />} />
+                
+                {/* Main Module Routes */}
+                <Route path="/samvaad" element={<Samvaad />} />
+                <Route path="/lipi-gyan" element={<LipiGyan />} />
+                <Route path="/saaransh" element={<Saaransh />} />
+                <Route path="/siksha" element={<Siksha />} />
+                
+                {/* Samvaad Sub-routes */}
+                <Route path="/samvaad/consultation" element={<Consultation />} />
+                <Route path="/samvaad/triage" element={<Triage />} />
+                <Route path="/samvaad/pharmacy" element={<Pharmacy />} />
+                
+                {/* Lipi-Gyan Sub-routes */}
+                <Route path="/lipi-gyan/prescription" element={<Prescription />} />
+                <Route path="/lipi-gyan/lab-report" element={<LabReport />} />
+                <Route path="/lipi-gyan/discharge" element={<Discharge />} />
+                
+                {/* Saaransh Sub-routes */}
+                <Route path="/saaransh/clinical-notes" element={<ClinicalNotes />} />
+                <Route path="/saaransh/action-plan" element={<ActionPlan />} />
+                <Route path="/saaransh/health-summary" element={<HealthSummary />} />
+              </Route>
+              
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
       </LanguageProvider>
     </TooltipProvider>
   </QueryClientProvider>
