@@ -13,7 +13,7 @@ from doc_ingestion.processor import DocumentProcessor
 app = Flask(__name__)
 
 # API server URL (where OCR/MT endpoints are running)
-API_SERVER_URL = os.getenv('API_SERVER_URL', 'http://localhost:5000')
+API_SERVER_URL = os.getenv('API_SERVER_URL', 'http://localhost:8005')
 
 
 @app.route('/', methods=['GET'])
