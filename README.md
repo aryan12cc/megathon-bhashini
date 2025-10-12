@@ -152,3 +152,9 @@ Use `git ls-files | tree --fromfile` to get the tree structure.
     └── vite.config.ts
 
 ```
+
+
+```
+sudo docker compose down -v
+sudo docker compose up -d
+```
