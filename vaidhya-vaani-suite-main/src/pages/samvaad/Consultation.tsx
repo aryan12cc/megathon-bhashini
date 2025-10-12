@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Mic, MicOff, Volume2, VolumeX, Play, Pause } from "lucide-react";
+import { Mic, MicOff, Volume2, VolumeX, Play, Pause, Copy } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +30,12 @@ type TranscriptResult = {
   isBlobUrl?: boolean; // Track if this is a blob URL that needs cleanup
 };
 
+type ConversationMessage = {
+  speaker: SpeakerModule;
+  text: string;
+  timestamp: Date;
+};
+
 // Language options based on your API mappings
 const LANGUAGES = [
   { value: "Hindi", label: "Hindi (हिंदी)" },
@@ -55,6 +61,8 @@ const Consultation = () => {
   const [isPlayingPatient, setIsPlayingPatient] = useState(false);
   const [doctorLanguage, setDoctorLanguage] = useState<string>("English");
   const [patientLanguage, setPatientLanguage] = useState<string>("Hindi");
+  const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
+  const [displayLanguage, setDisplayLanguage] = useState<string>("English");
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -573,6 +581,14 @@ const Consultation = () => {
         setPatientResult(result);
       }
 
+      // Add message to conversation history
+      const textToDisplay = displayLanguage === sourceLanguage ? originalText : translatedText;
+      setConversationHistory(prev => [...prev, {
+        speaker: speaker,
+        text: textToDisplay,
+        timestamp: new Date()
+      }]);
+
       toast.success("Audio processed successfully");
     } catch (error) {
       console.error("Error processing audio:", error);
@@ -848,6 +864,96 @@ const Consultation = () => {
     };
   }, []);
 
+  // Update conversation history when display language changes
+  const handleDisplayLanguageChange = async (newLanguage: string) => {
+    setDisplayLanguage(newLanguage);
+    
+    // Re-translate all messages to the new display language
+    const updatedHistory: ConversationMessage[] = [];
+    
+    for (const msg of conversationHistory) {
+      const sourceLanguage = msg.speaker === "doctor" ? doctorLanguage : patientLanguage;
+      
+      // If the new display language matches the source language, use original text
+      // Otherwise, we need to translate
+      if (newLanguage === sourceLanguage) {
+        // Find the original message from results
+        const originalText = msg.speaker === "doctor" ? 
+          (doctorResult?.originalText || msg.text) : 
+          (patientResult?.originalText || msg.text);
+        updatedHistory.push({
+          ...msg,
+          text: originalText
+        });
+      } else {
+        // Need to translate to the new display language
+        try {
+          // Get the original text first
+          const originalText = msg.speaker === "doctor" ? 
+            (doctorResult?.originalText || msg.text) : 
+            (patientResult?.originalText || msg.text);
+          
+          const mtResponse = await fetch('http://localhost:8005/mt', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              text: originalText,
+              source: sourceLanguage,
+              dest: newLanguage
+            }),
+          });
+
+          if (mtResponse.ok) {
+            const mtResult = await mtResponse.json();
+            const translatedText = mtResult.status === 'success' && mtResult.data?.output_text
+              ? mtResult.data.output_text
+              : (mtResult.output_text || originalText);
+            
+            updatedHistory.push({
+              ...msg,
+              text: translatedText
+            });
+          } else {
+            updatedHistory.push(msg); // Keep original on error
+          }
+        } catch (error) {
+          console.error('Error translating message:', error);
+          updatedHistory.push(msg); // Keep original on error
+        }
+      }
+    }
+    
+    setConversationHistory(updatedHistory);
+  };
+
+  // Copy conversation to clipboard
+  const copyConversationToClipboard = async () => {
+    if (conversationHistory.length === 0) {
+      toast.error("No conversation to copy");
+      return;
+    }
+
+    try {
+      // Format the conversation as text
+      const conversationText = conversationHistory
+        .map((msg) => {
+          const speaker = msg.speaker === "doctor" ? "Doctor" : "Patient";
+          const time = msg.timestamp.toLocaleTimeString();
+          return `[${time}] ${speaker}: ${msg.text}`;
+        })
+        .join('\n\n');
+
+      // Copy to clipboard
+      await navigator.clipboard.writeText(conversationText);
+      toast.success("Conversation copied to clipboard");
+    } catch (error) {
+      console.error("Error copying to clipboard:", error);
+      toast.error("Failed to copy conversation");
+    }
+  };
+
   const SpeakerModule = ({ speaker, title }: { speaker: SpeakerModule; title: string }) => {
     const isRecording = activeRecorder === speaker;
     const isOtherRecording = activeRecorder !== null && activeRecorder !== speaker;
@@ -989,6 +1095,82 @@ const Consultation = () => {
           <div className="grid md:grid-cols-2 gap-6">
             <SpeakerModule speaker="doctor" title="Doctor Module" />
             <SpeakerModule speaker="patient" title="Patient Module" />
+          </div>
+
+          {/* Conversation History Section */}
+          <div className="mt-8">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Conversation History</CardTitle>
+                  <div className="flex items-center gap-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={copyConversationToClipboard}
+                      disabled={conversationHistory.length === 0 || isProcessing}
+                    >
+                      <Copy className="mr-2 h-4 w-4" />
+                      Copy Conversation
+                    </Button>
+                    <label className="text-sm font-medium text-muted-foreground">
+                      Display Language:
+                    </label>
+                    <Select
+                      value={displayLanguage}
+                      onValueChange={handleDisplayLanguageChange}
+                      disabled={isProcessing}
+                    >
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="Select language" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LANGUAGES.map((lang) => (
+                          <SelectItem key={lang.value} value={lang.value}>
+                            {lang.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {conversationHistory.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    No conversation yet. Start recording to see the conversation history.
+                  </p>
+                ) : (
+                  <div className="space-y-4 max-h-[500px] overflow-y-auto">
+                    {conversationHistory.map((message, index) => (
+                      <div
+                        key={index}
+                        className={`p-4 rounded-lg ${
+                          message.speaker === "doctor"
+                            ? "bg-blue-50 dark:bg-blue-950/20 ml-0 mr-auto"
+                            : "bg-green-50 dark:bg-green-950/20 mr-0 ml-auto"
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <Badge
+                            variant={message.speaker === "doctor" ? "default" : "secondary"}
+                            className="mt-1"
+                          >
+                            {message.speaker === "doctor" ? "Doctor" : "Patient"}
+                          </Badge>
+                          <div className="flex-1">
+                            <p className="text-sm">{message.text}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {message.timestamp.toLocaleTimeString()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>

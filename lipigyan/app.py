@@ -3,6 +3,7 @@ Simple Flask API for Document Processing
 Uses existing OCR/MT API + Gemini summarization
 """
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 
@@ -11,6 +12,7 @@ load_dotenv()
 from doc_ingestion.processor import DocumentProcessor
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 # API server URL (where OCR/MT endpoints are running)
 API_SERVER_URL = os.getenv('API_SERVER_URL', 'http://localhost:8005')
