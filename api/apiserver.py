@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
+from ocr.ocr_mapping import mappings as ocr_mappings
 
 # Bhashini API Configuration
 BHASHINI_API_URL = "https://dhruva-api.bhashini.gov.in/services/inference/pipeline"
@@ -843,56 +844,51 @@ def asr_endpoint():
 
 @app.route('/ocr', methods=['POST'])
 def ocr_endpoint():
-    """
-    Optical Character Recognition endpoint using Bhashini API.
-    Expects form-data with file or JSON with image_base64
-    Modality can be: 'printed', 'scene', or 'handwritten' (default: 'printed')
-    """
     try:
-        language = None
-        image_base64 = None
-        modality = 'printed'  # Default modality
+        # Check if image file is present
+        if 'file' not in request.files:
+            return jsonify({
+                "status": "error",
+                "message": "No image file provided",
+                "data": None,
+                "error": "file is required in form data",
+                "code": 400
+            }), 400
         
-        # Check if it's form data with file
-        if 'file' in request.files:
-            image_file = request.files['file']
-            
-            if image_file.filename == '':
-                return jsonify({
-                    "status": "error",
-                    "message": "No file selected",
-                    "data": None,
-                    "error": "Please select an image file",
-                    "code": 400
-                }), 400
-            
-            # Validate file format
-            allowed_extensions = {'jpg', 'jpeg', 'png'}
-            file_extension = image_file.filename.rsplit('.', 1)[1].lower() if '.' in image_file.filename else ''
-            if file_extension not in allowed_extensions:
-                return jsonify({
-                    "status": "error",
-                    "message": "Invalid file format",
-                    "data": None,
-                    "error": f"File must be in jpg/png/jpeg format. Received: {file_extension}",
-                    "code": 400
-                }), 400
-            
-            # Get language and modality from form data
-            language = request.form.get('Language')
-            modality = request.form.get('modality', 'printed')
-            
-            # Convert image file to base64
-            image_file.seek(0)
-            image_bytes = image_file.read()
-            image_base64 = base64.b64encode(image_bytes).decode('utf-8')
-            
-        # Check if it's JSON with base64 image
-        elif request.is_json:
-            data = request.get_json()
-            image_base64 = data.get('image_base64') or data.get('imageContent')
-            language = data.get('Language') or data.get('language')
-            modality = data.get('modality', 'printed')
+        image_file = request.files['file']
+        
+        # Check if file is selected
+        if image_file.filename == '':
+            return jsonify({
+                "status": "error",
+                "message": "No file selected",
+                "data": None,
+                "error": "Please select an image file",
+                "code": 400
+            }), 400
+        
+        # Validate file format (jpg/png/jpeg)
+        allowed_extensions = {'jpg', 'jpeg', 'png'}
+        file_extension = image_file.filename.rsplit('.', 1)[1].lower() if '.' in image_file.filename else ''
+        if file_extension not in allowed_extensions:
+            return jsonify({
+                "status": "error",
+                "message": "Invalid file format",
+                "data": None,
+                "error": f"File must be in jpg/png/jpeg format. Received: {file_extension}",
+                "code": 400
+            }), 400
+        
+        # Get language from form data or JSON
+        language = request.form.get('Language')
+        if not language:
+            # Try to get from JSON if not in form data
+            try:
+                json_data = request.get_json()
+                if json_data:
+                    language = json_data.get('Language')
+            except:
+                pass
         
         if not language:
             return jsonify({
@@ -903,111 +899,37 @@ def ocr_endpoint():
                 "code": 400
             }), 400
         
-        if not image_base64:
+        # Get the OCR API URL for the specified language
+        if language not in ocr_mappings:
             return jsonify({
                 "status": "error",
-                "message": "Missing image data",
+                "message": "Language not supported",
                 "data": None,
-                "error": "Either file or image_base64 is required",
+                "error": f"Language '{language}' is not supported. Available languages: {list(ocr_mappings.keys())}",
                 "code": 400
             }), 400
         
-        # Validate modality
-        if modality not in OCR_SERVICE_IDS:
-            return jsonify({
-                "status": "error",
-                "message": "Invalid modality",
-                "data": None,
-                "error": f"Modality must be one of: {list(OCR_SERVICE_IDS.keys())}",
-                "code": 400
-            }), 400
+        ocr_api_url = ocr_mappings[language]
         
-        # Normalize language
-        language = normalize_language(language)
-        
-        # Validate language support for OCR with this modality
-        if language not in OCR_LANGUAGES[modality]:
-            return jsonify({
-                "status": "error",
-                "message": "Language not supported for this OCR modality",
-                "data": None,
-                "error": f"Language '{language}' is not supported for {modality} OCR. Available languages: {OCR_LANGUAGES[modality]}",
-                "code": 400
-            }), 400
-        
-        # Get the appropriate service ID for the modality
-        service_id = OCR_SERVICE_IDS[modality]
-        
-        # Prepare Bhashini API payload
-        bhashini_payload = {
-            "pipelineTasks": [
-                {
-                    "taskType": "ocr",
-                    "config": {
-                        "language": {
-                            "sourceLanguage": language
-                        },
-                        "serviceId": service_id
-                    }
-                }
-            ],
-            "inputData": {
-                "image": [
-                    {
-                        "imageContent": image_base64
-                    }
-                ]
-            }
-        }
-        
-        # Make the request to Bhashini API
+        # Prepare the file for upload
         try:
+            # Prepare headers with access token (don't include Content-Type for multipart)
             headers = {
-                'Authorization': BHASHINI_API_KEY,
-                'Content-Type': 'application/json'
+                'access-token': "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjhlYTYyMjdiOTNlM2JlYzkwMWZkOGQ3Iiwicm9sZSI6Im1lZ2F0aG9uX3N0dWRlbnQifQ.tMn2kPuK7tI9pLjELAHqNXbzE3H1wJBFDKUPf6elww8"
             }
             
-            response = requests.post(
-                BHASHINI_API_URL,
-                json=bhashini_payload,
-                headers=headers,
-                timeout=60
-            )
+            # Prepare files for the request
+            files = {
+                'file': (image_file.filename, image_file.stream, image_file.content_type)
+            }
+            
+            # Make request with SSL verification disabled to handle certificate issues
+            response = requests.post(ocr_api_url, files=files, headers=headers, timeout=60, verify=False)
             response.raise_for_status()
             
-            bhashini_response = response.json()
-            
-            # Extract recognized text from response
-            recognized_text = None
-            if 'pipelineResponse' in bhashini_response:
-                for task_response in bhashini_response['pipelineResponse']:
-                    if task_response.get('taskType') == 'ocr' and 'output' in task_response:
-                        output_list = task_response['output']
-                        if output_list and len(output_list) > 0:
-                            recognized_text = output_list[0].get('source')
-                            break
-            
-            if not recognized_text:
-                return jsonify({
-                    "status": "error",
-                    "message": "No text recognized",
-                    "data": None,
-                    "error": "Bhashini API did not return recognized text",
-                    "code": 502
-                }), 502
-            
-            # Return response in format compatible with frontend
-            return jsonify({
-                "status": "success",
-                "message": "OCR conversion successful",
-                "data": {
-                    "recognized_text": recognized_text,
-                    "language": language,
-                    "modality": modality
-                },
-                "error": None,
-                "code": 200
-            }), 200
+            # Return the response from the OCR API
+            ocr_response = response.json()
+            return jsonify(ocr_response), response.status_code
             
         except requests.exceptions.Timeout:
             return jsonify({
@@ -1044,6 +966,7 @@ def ocr_endpoint():
             "error": str(e),
             "code": 500
         }), 500
+
 
 @app.route('/mt', methods=['POST'])
 def mt_endpoint():
