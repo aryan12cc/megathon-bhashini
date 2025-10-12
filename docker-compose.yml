@@ -1,0 +1,167 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7
+    container_name: megathon_mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - megathon_network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Database API Server (FastAPI)
+  database:
+    build:
+      context: ./database
+      dockerfile: Dockerfile
+    container_name: megathon_database
+    restart: unless-stopped
+    environment:
+      - MONGODB_URL=mongodb://mongodb:27017/megathon_bhashini
+      - HOST=0.0.0.0
+      - PORT=8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - megathon_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Main API Server (OCR, MT, TTS, ASR)
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: megathon_api
+    restart: unless-stopped
+    environment:
+      - FLASK_ENV=production
+      - BHASHINI_API_KEY=${BHASHINI_API_KEY:-DveTyi8IJRxMNJdbUI0EhiE1X0yQYmoIiNLafiNLYbr4K0JCmDxFasFbOQQgkz7w}
+    ports:
+      - "8005:8005"
+    networks:
+      - megathon_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Speech-to-Speech Service
+  s2s:
+    build:
+      context: ./s2s
+      dockerfile: Dockerfile
+    container_name: megathon_s2s
+    restart: unless-stopped
+    environment:
+      - FLASK_ENV=production
+      - API_SERVER_URL=http://api:8005
+    ports:
+      - "8001:8001"
+    depends_on:
+      - api
+    networks:
+      - megathon_network
+    volumes:
+      - s2s_uploads:/tmp/s2s_uploads
+      - s2s_outputs:/tmp/s2s_outputs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Saraansh - Clinical Transcript Processing
+  saraansh:
+    build:
+      context: ./saraansh
+      dockerfile: Dockerfile
+    container_name: megathon_saraansh
+    restart: unless-stopped
+    environment:
+      - FLASK_ENV=production
+      - API_SERVER_URL=http://api:8005
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    ports:
+      - "5003:5003"
+    depends_on:
+      - api
+    networks:
+      - megathon_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5003/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Lipigyan - Document Processing
+  lipigyan:
+    build:
+      context: ./lipigyan
+      dockerfile: Dockerfile
+    container_name: megathon_lipigyan
+    restart: unless-stopped
+    environment:
+      - FLASK_ENV=production
+      - API_SERVER_URL=http://api:8005
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    ports:
+      - "5001:5001"
+    depends_on:
+      - api
+    networks:
+      - megathon_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend UI (React/Vite)
+  ui:
+    build:
+      context: ./vaidhya-vaani-suite-main
+      dockerfile: Dockerfile
+    container_name: megathon_ui
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+      - database
+      - s2s
+      - saraansh
+      - lipigyan
+    networks:
+      - megathon_network
+    environment:
+      - VITE_API_URL=http://localhost:8005
+      - VITE_DATABASE_URL=http://localhost:8000
+      - VITE_S2S_URL=http://localhost:8001
+      - VITE_SARAANSH_URL=http://localhost:5003
+      - VITE_LIPIGYAN_URL=http://localhost:5001
+
+volumes:
+  mongodb_data:
+  s2s_uploads:
+  s2s_outputs:
+
+networks:
+  megathon_network:
+    driver: bridge
