@@ -19,14 +19,15 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from starlette.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
+from dotenv import load_dotenv
 
 
 # --- Configuration ---
 SECRET_KEY = os.getenv("SECRET_KEY", "a_very_secret_key")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "939597708417-r3k4damgmlqeijps5k4up0gnl3280bt7.apps.googleusercontent.com")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "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")
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 
 
 # --- Security ---
@@ -468,6 +469,9 @@ async def delete_conversation(convo_id: str, current_user: dict = Depends(get_cu
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete conversation: {str(e)}")
 
+
+# Load environment variables from .env file
+load_dotenv()
 
 if __name__ == "__main__":
     # Get configuration from environment variables
