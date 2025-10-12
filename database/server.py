@@ -26,7 +26,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "a_very_secret_key")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "939597708417-r3k4damgmlqeijps5k4up0gnl3280bt7.apps.googleusercontent.com")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "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")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "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")
 
 
 # --- Security ---
@@ -114,7 +114,10 @@ oauth.register(
     server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
     client_kwargs={
         'scope': 'openid email profile'
-    }
+    },
+    authorize_params={'access_type': 'offline', 'prompt': 'consent'},
+    api_base_url='https://www.googleapis.com/oauth2/v1/',
+    userinfo_endpoint='https://www.googleapis.com/oauth2/v1/userinfo?alt=json'
 )
 
 
