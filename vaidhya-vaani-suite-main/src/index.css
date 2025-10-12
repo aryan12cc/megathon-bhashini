@@ -1,3 +1,5 @@
+@import 'react-big-calendar/lib/css/react-big-calendar.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -116,4 +118,70 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.rbc-calendar {
+  font-family: var(--font-sans);
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  overflow: hidden;
+  height: 600px;
+}
+
+.rbc-toolbar {
+  background-color: hsl(var(--card));
+  border-bottom: 1px solid hsl(var(--border));
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rbc-toolbar .rbc-btn-group button {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.rbc-toolbar .rbc-btn-group button:hover,
+.rbc-toolbar .rbc-btn-group button:focus {
+  background-color: hsl(var(--primary) / 0.9);
+}
+
+.rbc-toolbar .rbc-btn-group .rbc-active {
+    background-color: hsl(var(--primary) / 0.8);
+}
+
+.rbc-toolbar-label {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: hsl(var(--foreground));
+}
+
+.rbc-event {
+  background-color: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  padding: 0.25rem 0.5rem;
+}
+
+.rbc-day-slot .rbc-event {
+    border: 1px solid hsl(var(--primary));
+}
+
+.rbc-header {
+  background-color: hsl(var(--card));
+  border-bottom: 1px solid hsl(var(--border));
+  padding: 0.5rem;
+  text-align: center;
+  font-weight: 600;
+}
+
+.rbc-day-bg.rbc-today {
+  background-color: hsl(var(--accent) / 0.1);
 }
