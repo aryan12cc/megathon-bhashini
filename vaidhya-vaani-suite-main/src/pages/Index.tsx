@@ -1,4 +1,4 @@
-import { MessageSquare, FileText, Brain, GraduationCap } from "lucide-react";
+import { MessageSquare, FileText, Brain, Calendar } from "lucide-react";
 import ModuleCard from "@/components/ModuleCard";
 import Navbar from "@/components/Navbar";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -31,7 +31,7 @@ const Index = () => {
     {
       title: t('index.panchang.title'),
       description: t('index.panchang.description'),
-      icon: GraduationCap,
+      icon: Calendar,
       path: "/panchang",
       gradient: "bg-gradient-hero",
     },
