@@ -31,7 +31,6 @@ import Discharge from "./pages/lipi-gyan/Discharge";
 import ClinicalNotes from "./pages/saaransh/ClinicalNotes";
 import ActionPlan from "./pages/saaransh/ActionPlan";
 import HealthSummary from "./pages/saaransh/HealthSummary";
-import Proactive from "./pages/siksha/Proactive";
 
 const queryClient = new QueryClient();
 
@@ -72,7 +71,7 @@ const App = () => (
                 <Route path="/saaransh/health-summary" element={<HealthSummary />} />
 
                 {/* Siksha Sub-routes */}
-                <Route path="/siksha/proactive" element={<Proactive />} />
+                {/* <Route path="/siksha/proactive" element={<Proactive />} /> */}
               </Route>
               
               <Route path="*" element={<NotFound />} />
