@@ -4,7 +4,7 @@
 
 > *"If you talk to a man in a language he understands, that goes to his head. If you talk to him in his language, that goes to his heart."* - Nelson Mandela
 
-## 🚀 Quick Start - How to Run
+## Quick Start - How to Run
 
 ### Prerequisites
 - Docker and Docker Compose installed on your system
@@ -25,11 +25,11 @@ sudo docker compose up -d    # Start in detached mode
 # Access the application: http://localhost:5173
 ```
 
-**🌐 Main Application URL:** [http://localhost:5173](http://localhost:5173)
+** Main Application URL:** [http://localhost:5173](http://localhost:5173)
 
 ---
 
-## 📖 About Vaidya Vaani
+## About Vaidya Vaani
 
 **Vaidya Vaani** (The Voice of the Healer) is powered by Bhashini and designed to democratize healthcare services for everyone in India. We believe that quality healthcare should not be limited by language barriers.
 
@@ -39,7 +39,7 @@ Meet Dr. Yajat from Delhi working in rural Telangana - a dedicated doctor who wa
 
 ---
 
-## 🏗️ System Architecture & Modules
+## System Architecture & Modules
 
 ### 1. **Frontend Application** (`vaidhya-vaani-suite-main/`)
 **Technology:** React + TypeScript + Tailwind CSS + Vite
@@ -74,7 +74,7 @@ Complete audio processing pipeline that combines ASR → MT → TTS for real-tim
 
 ---
 
-## 🌟 Main Features
+## Main Features
 
 ### 1. **Samvaad** (The Conversational Model)
 > *Real-time multilingual communication for healthcare*
@@ -134,7 +134,7 @@ Complete audio processing pipeline that combines ASR → MT → TTS for real-tim
 
 ---
 
-## 🎯 Use Cases
+## Use Cases
 
 1. **Rural Healthcare**: Bridging communication gaps between urban doctors and rural patients
 2. **Emergency Care**: Quick triage and patient intake in multilingual environments  
@@ -144,9 +144,9 @@ Complete audio processing pipeline that combines ASR → MT → TTS for real-tim
 
 ---
 
-## 🔮 Advanced Features (Google Auth Branch)
+## Advanced Features (Google Auth Branch)
 
-### 📅 Google Calendar Integration
+### Google Calendar Integration
 
 We have an enhanced version available in the `google-auth` branch that includes:
 
